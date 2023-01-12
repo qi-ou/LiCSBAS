@@ -494,6 +494,43 @@ def ifgdates2imdates(ifgdates):
 
 
 #%%
+def separate_strong_and_weak_links(ifg_list):
+    """return a list of strong ifgs and a list of weak ifgs"""
+    primarylist = []
+    secondarylist = []
+    for pairs in ifg_list:
+        primarylist.append(pairs[:8])
+        secondarylist.append(pairs[-8:])
+
+    all_epochs = primarylist + secondarylist
+    all_epochs.sort()
+    epochs, counts = np.unique(all_epochs, return_counts=True)
+
+    # iteratively drop weak ifgs associated with epochs with 1 or 2 links
+    while len(epochs) > 0 and np.min(counts) < 3:
+        strong_epoch_list = epochs[counts > 2]
+        strong_primary_check = np.array([x in strong_epoch_list for x in primarylist])
+        strong_secondary_check = np.array([x in strong_epoch_list for x in secondarylist])
+        strong_ifg_check = np.logical_and(strong_primary_check, strong_secondary_check)
+        primarylist = np.array(primarylist)[strong_ifg_check].tolist()
+        secondarylist = np.array(secondarylist)[strong_ifg_check].tolist()
+
+        epochs = primarylist + secondarylist
+        epochs.sort()
+        epochs, counts = np.unique(epochs, return_counts=True)
+
+    if len(epochs) > 0:
+        strong_ifgs = [p+'_'+s for p, s in zip(primarylist, secondarylist)]
+        weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
+        weak_ifgs.sort()
+    else:
+        strong_ifgs = []
+        weak_ifgs = ifg_list
+
+    return strong_ifgs, weak_ifgs
+
+
+#%%
 def multilook(array, nlook_r, nlook_c, n_valid_thre=0.5):
     """
     Nodata in input array must be filled with nan beforehand.

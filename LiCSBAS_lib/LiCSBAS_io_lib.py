@@ -144,6 +144,8 @@ def read_bperp_file(bperp_file, imdates):
     ### Determine type of bperp_file; old or not
     with open(bperp_file) as f:
         line = f.readline().split() #list
+        if not line[0].startswith("2"):
+            line = f.readline().split()  # find first line that starts with '2'
 
     if len(line) == 4: ## new format
         bperp_dict[line[0]] = '0.00' ## single prime. unnecessary?
@@ -237,3 +239,24 @@ def get_param_par(mlipar, field):
     value = subp.check_output(['grep', field,mlipar]).decode().split()[1].strip()
     return value
 
+
+#%%
+def read_residual_file(resid_file):
+    """
+    # RMS of residual (in number of 2pi)
+    20141018_20141205  0.07
+    ...
+    20220720_20220801  0.06
+    RMS_mode:  0.05
+    RMS_median:  0.10
+    RMS_mean:  0.13
+    RMS_thresh:  0.20
+    """
+    ifg_list = []
+    residual_list = []
+    with open(resid_file) as f:
+        for l in f:
+            if l.startswith("2"):
+                ifg_list.append(l.split()[0])
+                residual_list.append(float(l.split()[1]))
+    return ifg_list, residual_list
