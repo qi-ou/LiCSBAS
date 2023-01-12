@@ -173,7 +173,7 @@ def one_correction():
     run_131(current_iter)
 
     ifg_to_correct, good_ifg = get_good_bad_list(current_iter)
-    if len(ifg_to_correct):
+    if len(ifg_to_correct) == 0:
         run_133(current_iter)
     else:
         run_132(current_iter_unwdir, next_iter_unwdir, current_iter)
@@ -228,11 +228,6 @@ def run_132(before_dir, after_dir, current_iter):
 def run_133(current_iter):
     os.system('LiCSBAS133_write_h5.py -c {} -t {} --suffix {} '.format(
         ccdir, args.ts_dir, int(current_iter)))
-
-
-def run_masking(before_dir, after_dir, current_iter):
-    os.system('LiCSBAS132_3D_correction.py -c {} -d {} -o {} -t {} --suffix {} --mask_by_residual'.format(
-        ccdir, before_dir, after_dir, args.ts_dir, int(current_iter)))
 
 
 def main():
