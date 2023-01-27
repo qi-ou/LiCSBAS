@@ -301,7 +301,7 @@ def save_reference_to_file():
 
 
 def discard_ifg_with_all_nans_at_ref():
-    global noref_ifg, strong_links, weak_links, retained_ifgs
+    global noref_ifg, retained_ifgs
     print("Check if any ifg have all nan values in the selected reference window and export referenced ifgs")
     ### identify IFGs with all nan in the reference window
     ### Check ref exist in unw. If not, list as noref_ifg
@@ -338,7 +338,7 @@ def discard_ifg_with_all_nans_at_ref():
 
 
 def component_network_analysis(retained_ifgs):
-    global edge_cuts, node_cuts, component_statsfile
+    global strong_links, weak_links, edge_cuts, node_cuts
     print("Separate strong and weak links in the remaining network")
     strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile)
 
@@ -381,7 +381,7 @@ def get_bperp_from_ifgdates(ifgdates):
     return bperp
 
 
-def plot_networks(retained_ifgs):
+def plot_networks():
     #%% Plot network
     bperp = get_bperp_from_ifgdates(ifgdates)
 
@@ -417,7 +417,7 @@ def main():
     # retained_ifgs = discard_ifg_with_all_nans_at_ref()
     retained_ifgs = ifgdates
     component_network_analysis(retained_ifgs)
-    plot_networks(retained_ifgs)
+    plot_networks()
     finish()
 
 
