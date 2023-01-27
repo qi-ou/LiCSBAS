@@ -347,7 +347,7 @@ def component_network_analysis(retained_ifgs):
     with open(weak_ifgfile, 'w') as f:
         for i in weak_links:
             print('{}'.format(i), file=f)
-            print('{}'.format(i))
+            # print('{}'.format(i))
 
     # export strong links
     with open(strong_ifgfile, 'w') as f:
