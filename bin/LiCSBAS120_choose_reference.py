@@ -403,18 +403,19 @@ def main():
     start()
     init_args()
     set_input_output()
-    read_length_width()
-    decide_reference_window_size()
+    # read_length_width()
+    # decide_reference_window_size()
     get_ifgdates()
-
-    calc_block_sum_of_unw_coh_component_size()
-    calc_height_std()
-    clip_normalise_combine_indices()
-
-    closest_to_ref_center()
-    plot_ref_proxies()
-    save_reference_to_file()
-    retained_ifgs = discard_ifg_with_all_nans_at_ref()
+    #
+    # calc_block_sum_of_unw_coh_component_size()
+    # calc_height_std()
+    # clip_normalise_combine_indices()
+    #
+    # closest_to_ref_center()
+    # plot_ref_proxies()
+    # save_reference_to_file()
+    # retained_ifgs = discard_ifg_with_all_nans_at_ref()
+    retained_ifgs = ifgdates
     component_network_analysis(retained_ifgs)
     plot_networks()
     finish()
