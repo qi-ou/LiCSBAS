@@ -577,7 +577,7 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
         average_degree = np.mean(degrees)
-        with open(component_statsfile, 'w') as f:
+        with open(component_statsfile, 'a') as f:
             print("Largest_cc_node_number: {}".format(len(G.nodes)), file=f)
             print("Largest_cc_node_number: {}".format(len(G.nodes)))
             print("Largest_cc_edge_number: {}".format(len(G.edges)), file=f)
