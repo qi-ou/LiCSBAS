@@ -381,8 +381,7 @@ def get_bperp_from_ifgdates(ifgdates):
     return bperp
 
 
-def plot_networks():
-    global retained_ifgs
+def plot_networks(retained_ifgs):
     #%% Plot network
     bperp = get_bperp_from_ifgdates(ifgdates)
 
@@ -418,7 +417,7 @@ def main():
     # retained_ifgs = discard_ifg_with_all_nans_at_ref()
     retained_ifgs = ifgdates
     component_network_analysis(retained_ifgs)
-    plot_networks()
+    plot_networks(retained_ifgs)
     finish()
 
 
