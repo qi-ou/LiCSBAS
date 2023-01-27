@@ -502,3 +502,107 @@ def plot_coloured_network(ifgdates, bperp, perc_list, pngfile):
     plt.savefig(pngfile, bbox_inches='tight')
     plt.close()
 
+
+def plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True):
+    """
+    Plot network of interferometric pairs.
+
+    bperp can be dummy (-1~1).
+    Suffix of pngfile can be png, ps, pdf, or svg.
+    plot_bad
+        True  : Plot corrected ifgs by grey lines
+        False : Do not plot corrected ifgs
+    plot strong_links as blue lines
+    plot weak_links as grey lines
+    plot edge_cutes as red lines
+    plot node_cuts as red dots
+    """
+
+    imdates_all = tools_lib.ifgdates2imdates(ifgdates)
+    n_im_all = len(imdates_all)
+    imdates_dt_all = np.array(([dt.datetime.strptime(imd, '%Y%m%d') for imd in imdates_all]))  ##datetime
+
+    good_ifgdates = list(set(ifgdates) - set(weak_links))
+    good_ifgdates.sort()
+
+    ### Plot fig
+    figsize_x = np.round(((imdates_dt_all[-1] - imdates_dt_all[0]).days) / 80) + 2
+    fig = plt.figure(figsize=(figsize_x, 6))
+    ax = fig.add_axes([0.06, 0.12, 0.92, 0.85])
+
+    ### IFG good blue lines
+    for i, ifgd in enumerate(good_ifgdates):
+        ix_m = imdates_all.index(ifgd[:8])
+        ix_s = imdates_all.index(ifgd[-8:])
+        label = 'IFG' if i == 0 else ''  # label only first
+        plt.plot([imdates_dt_all[ix_m], imdates_dt_all[ix_s]], [bperp[ix_m],
+                                                                bperp[ix_s]], color='b', alpha=0.6, zorder=2,
+                 label=label)
+
+    ### IFG corrected red lines
+    if plot_weak:
+        for i, ifgd in enumerate(weak_links):
+            ix_m = imdates_all.index(ifgd[:8])
+            ix_s = imdates_all.index(ifgd[-8:])
+            label = 'Weak_links' if i == 0 else ''  # label only first
+            plt.plot([imdates_dt_all[ix_m], imdates_dt_all[ix_s]],
+                     [bperp[ix_m], bperp[ix_s]],
+                     color='grey', alpha=0.6, zorder=6, label=label)
+
+    for i, ifgd in enumerate(edge_cuts):
+        ix_m = imdates_all.index(ifgd[:8])
+        ix_s = imdates_all.index(ifgd[-8:])
+        label = 'Edge_cuts' if i == 0 else ''  # label only first
+        plt.plot([imdates_dt_all[ix_m], imdates_dt_all[ix_s]],
+                 [bperp[ix_m], bperp[ix_s]],
+                 color='r', alpha=0.6, zorder=6, label=label)
+
+    ### Image points and dates
+    ax.scatter(imdates_dt_all, bperp, alpha=0.6, zorder=4)
+    for i, node in enumerate(node_cuts):
+        ix_n = imdates_all.index(node)
+        label = 'Node_cuts' if i == 0 else ''  # label only first
+        plt.scatter(imdates_dt_all[ix_n], bperp[ix_n], color='r', alpha=0.6, zorder=6, label=label)
+
+
+    for i in range(n_im_all):
+        if bperp[i] > np.median(bperp):
+            va = 'bottom'
+        else:
+            va = 'top'
+        ax.annotate(imdates_all[i][4:6] + '/' + imdates_all[i][6:],
+                    (imdates_dt_all[i], bperp[i]), ha='center', va=va, zorder=8)
+
+
+    ### Locater
+    loc = ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    try:  # Only support from Matplotlib 3.1
+        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(loc))
+    except:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m/%d'))
+        for label in ax.get_xticklabels():
+            label.set_rotation(20)
+            label.set_horizontalalignment('right')
+    ax.grid(b=True, which='major')
+
+    ### Add bold line every 1yr
+    ax.xaxis.set_minor_locator(mdates.YearLocator())
+    ax.grid(b=True, which='minor', linewidth=2)
+
+    ax.set_xlim((imdates_dt_all[0] - dt.timedelta(days=10),
+                 imdates_dt_all[-1] + dt.timedelta(days=10)))
+
+    ### Labels and legend
+    plt.xlabel('Time')
+    if np.all(np.abs(np.array(bperp)) <= 1):  ## dummy
+        plt.ylabel('dummy')
+    else:
+        plt.ylabel('Bperp [m]')
+
+    plt.legend()
+
+    ### Save
+    plt.savefig(pngfile, bbox_inches='tight')
+    plt.close()
+
+    return

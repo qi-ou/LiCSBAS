@@ -104,7 +104,7 @@ def finish():
 
 
 def set_input_output():
-    global ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile
+    global ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile, edge_cut_ifgfile, node_cut_ifgfile, component_statsfile
 
     ### Define input directories
     ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
@@ -119,7 +119,10 @@ def set_input_output():
     noref_ifgfile = os.path.join(infodir, '120bad_ifg.txt')
     reference_png = os.path.join(infodir, "120_reference.png")
     weak_ifgfile = os.path.join(infodir, '120weak_links.txt')
-    strong_ifgfile = os.path.join(infodir, '120strong_links.txt')
+    strong_ifgfile = os.path.join(infodir, '120strong_connected_links.txt')
+    edge_cut_ifgfile = os.path.join(infodir, '120edge_cuts.txt')
+    node_cut_ifgfile = os.path.join(infodir, '120node_cuts.txt')
+    component_statsfile = os.path.join(infodir, '120component_stats.txt')
 
 
 def read_length_width():
@@ -330,11 +333,14 @@ def discard_ifg_with_all_nans_at_ref():
         for i in noref_ifg:
             print('{}'.format(i), file=f)
             print('{}'.format(i))
-
-
-    print("Separate strong and weak links in the remaining network")
     retained_ifgs = list(set(ifgdates)-set(noref_ifg))
-    strong_links, weak_links = tools_lib.separate_strong_and_weak_links(retained_ifgs)
+    return retained_ifgs
+
+
+def component_network_analysis(retained_ifgs):
+    global edge_cuts, node_cuts, component_statsfile
+    print("Separate strong and weak links in the remaining network")
+    strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile)
 
     print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
     # export weak links
@@ -347,6 +353,20 @@ def discard_ifg_with_all_nans_at_ref():
     with open(strong_ifgfile, 'w') as f:
         for i in strong_links:
             print('{}'.format(i), file=f)
+
+    # export edge cuts
+    print("{} ifgs are edge cuts".format(len(edge_cuts)))
+    with open(edge_cut_ifgfile, 'w') as f:
+        for i in edge_cuts:
+            print('{}'.format(i), file=f)
+            print('{}'.format(i))
+
+    # export edge cuts
+    print("{} epochs are node cuts".format(len(node_cuts)))
+    with open(node_cut_ifgfile, 'w') as f:
+        for i in node_cuts:
+            print('{}'.format(i), file=f)
+            print('{}'.format(i))
 
 
 def get_bperp_from_ifgdates(ifgdates):
@@ -372,9 +392,11 @@ def plot_networks():
     plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
 
     bperp = get_bperp_from_ifgdates(retained_ifgs)
-    pngfile = os.path.join(netdir, 'network120_remain_strong.png')
-    n_gap = plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
-    print("There are {} gap(s) in the remaining network of {} strong-link ifgs".format(n_gap, len(strong_links)))
+    pngfile = os.path.join(netdir, 'network120_remain_strong_cuts.png')
+    # n_gap = plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
+    # print("There are {} gap(s) in the remaining network of {} strong-link ifgs".format(n_gap, len(strong_links)))
+    plot_lib.plot_strong_weak_cuts_network(retained_ifgs, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
+
 
 
 def main():
@@ -392,7 +414,8 @@ def main():
     closest_to_ref_center()
     plot_ref_proxies()
     save_reference_to_file()
-    discard_ifg_with_all_nans_at_ref()
+    retained_ifgs = discard_ifg_with_all_nans_at_ref()
+    component_network_analysis(retained_ifgs)
     plot_networks()
     finish()
 

@@ -45,6 +45,7 @@ import numpy as np
 import warnings
 from matplotlib.colors import LinearSegmentedColormap as LSC
 from matplotlib import pyplot as plt
+import networkx as nx
 
 
 #%%
@@ -494,7 +495,24 @@ def ifgdates2imdates(ifgdates):
 
 
 #%%
-def separate_strong_and_weak_links(ifg_list):
+def ifgdates_to_edges(ifgdates):
+    """ convert list of "20xxxxxx_20xxxxxx" into list of tuples ("20xxxxxx", "20xxxxxx") for networkx analysis"""
+    edges = []
+    for ifgd in ifgdates:
+        edges.append(tuple((ifgd[:8], ifgd[9:])))
+    return edges
+
+
+def edges_to_ifgdates(edges):
+    """ convert list of tuples ("20xxxxxx", "20xxxxxx") back to list of "20xxxxxx_20xxxxxx" """
+    ifgdates = []
+    for edge in edges:
+        ifgdates.append(edge[0] + "_" + edge[1])
+    return ifgdates
+
+
+
+def separate_strong_and_weak_links(ifg_list, component_statsfile):
     """return a list of strong ifgs and a list of weak ifgs"""
     primarylist = []
     secondarylist = []
@@ -519,15 +537,63 @@ def separate_strong_and_weak_links(ifg_list):
         epochs.sort()
         epochs, counts = np.unique(epochs, return_counts=True)
 
+    edge_cuts = []
+    node_cuts = []
     if len(epochs) > 0:
         strong_ifgs = [p+'_'+s for p, s in zip(primarylist, secondarylist)]
+
+        # check if the ifgs after removing epochs with 1 or 2 ifgs form on connected network
+        edges = ifgdates_to_edges(strong_ifgs)
+        G = nx.Graph()
+        G.add_edges_from(edges)
+        number_of_components = len(list(nx.connected_components(G)))
+
+        # compute other stats about the largest connected components
+        if os.path.exists(component_statsfile): os.remove(component_statsfile)
+        with open(component_statsfile, 'w') as f:
+            print("Number_of_connected_components: {}".format(number_of_components), file=f)
+            print("Number_of_connected_components: {}".format(number_of_components))
+
+        # if not connected, extract the largest connected component based on number of epochs involved
+        if not nx.is_connected(G):
+            largest_cc = max(nx.connected_components(G), key=len)
+            Gs = nx.subgraph(G, largest_cc)
+            G = nx.Graph(Gs)
+
+        # if the largest component network is not well-connected, highlight the edge cuts and node cuts
+        if nx.node_connectivity(G) < 2 or nx.edge_connectivity(G) < 3:
+            edge_cuts = edges_to_ifgdates(list(nx.bridges(G)))
+            node_cuts = []
+            for i in list(nx.all_node_cuts(G)):
+                for j in list(i):
+                    node_cuts.append(j)
+
+        # strong_ifgs = [p+'_'+s for p, s in zip(primarylist, secondarylist)]
+        # now only strong links in the largest component of the network is considered strong
+        strong_ifgs = sorted(edges_to_ifgdates(G.edges))
         weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
         weak_ifgs.sort()
+
+        # compute other stats about the largest connected components
+        degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
+        average_degree = np.mean(degrees)
+        with open(component_statsfile, 'w') as f:
+            print("Largest_cc_node_number: {}".format(len(G.nodes)), file=f)
+            print("Largest_cc_node_number: {}".format(len(G.nodes)))
+            print("Largest_cc_edge_number: {}".format(len(G.edges)), file=f)
+            print("Largest_cc_edge_number: {}".format(len(G.edges)))
+            print("Largest_cc_average_degree: {}".format(average_degree), file=f)
+            print("Largest_cc_average_degree: {}".format(average_degree))
+            print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)), file=f)
+            print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)))
+            print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)), file=f)
+            print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)))
+
     else:
         strong_ifgs = []
         weak_ifgs = ifg_list
 
-    return strong_ifgs, weak_ifgs
+    return strong_ifgs, weak_ifgs, edge_cuts, node_cuts
 
 
 #%%
