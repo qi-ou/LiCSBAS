@@ -382,6 +382,7 @@ def get_bperp_from_ifgdates(ifgdates):
 
 
 def plot_networks():
+    global retained_ifgs
     #%% Plot network
     bperp = get_bperp_from_ifgdates(ifgdates)
 
