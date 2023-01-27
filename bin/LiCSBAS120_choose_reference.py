@@ -388,8 +388,8 @@ def plot_networks():
     pngfile = os.path.join(netdir, 'network120_all.png')
     plot_lib.plot_network(ifgdates, bperp, [], pngfile)
 
-    pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
-    plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
+    # pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
+    # plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
 
     bperp = get_bperp_from_ifgdates(retained_ifgs)
     pngfile = os.path.join(netdir, 'network120_remain_strong_cuts.png')
