@@ -541,6 +541,9 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
     node_cuts = []
     if len(epochs) > 0:
         strong_ifgs = [p+'_'+s for p, s in zip(primarylist, secondarylist)]
+        weak_ifgs = list(set(ifg_list) - set(strong_ifgs))
+        print("{} ifgs remaining strong".format(len(strong_ifgs)))
+        print("{} ifgs weak".format(len(weak_ifgs)))
 
         # check if the ifgs after removing epochs with 1 or 2 ifgs form on connected network
         edges = ifgdates_to_edges(strong_ifgs)
@@ -573,6 +576,8 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
         strong_ifgs = sorted(edges_to_ifgdates(G.edges))
         weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
         weak_ifgs.sort()
+        print("{} edges strong connected".format(len(strong_ifgs)))
+        print("{} edges after network check".format(len(weak_ifgs)))
 
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
