@@ -400,6 +400,7 @@ def plot_networks():
 
 
 def main():
+    global retained_ifgs
     start()
     init_args()
     set_input_output()
