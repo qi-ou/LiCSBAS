@@ -549,12 +549,9 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
         print("{} edges set strong connected".format(len(set(strong_ifgs))))
         print("{} edges set after network check".format(len(set(weak_ifgs))))
 
-
-
-
         # check if the ifgs after removing epochs with 1 or 2 ifgs form on connected network
         edges = ifgdates_to_edges(strong_ifgs)
-        G = nx.Graph()
+        G = nx.DiGraph()
         G.add_edges_from(edges)
         number_of_components = len(list(nx.connected_components(G)))
 
