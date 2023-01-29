@@ -507,7 +507,9 @@ def edges_to_ifgdates(edges):
     """ convert list of tuples ("20xxxxxx", "20xxxxxx") back to list of "20xxxxxx_20xxxxxx" """
     ifgdates = []
     for edge in edges:
-        ifgdates.append(edge[0] + "_" + edge[1])
+        epoch1 = str(min(int(edge[0]), int(edge[1])))
+        epoch2 = str(max(int(edge[0]), int(edge[1])))
+        ifgdates.append(epoch1 + "_" + epoch2)
     return ifgdates
 
 
@@ -551,7 +553,7 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
 
         # check if the ifgs after removing epochs with 1 or 2 ifgs form on connected network
         edges = ifgdates_to_edges(strong_ifgs)
-        G = nx.DiGraph()
+        G = nx.Graph()
         G.add_edges_from(edges)
         number_of_components = len(list(nx.connected_components(G)))
 
