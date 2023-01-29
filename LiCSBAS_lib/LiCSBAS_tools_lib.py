@@ -575,9 +575,8 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
         strong_ifgs = sorted(edges_to_ifgdates(G.edges))
         weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
         weak_ifgs.sort()
-        print("{} edges all ifg".format(len(ifg_list)))
-        print("{} edges well connected".format(len(strong_ifgs)))
-        print("{} edges removed".format(len(weak_ifgs)))
+        print("{} edges in total".format(len(ifg_list)))
+        print("{} weak edges removed".format(len(weak_ifgs)))
 
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
@@ -587,12 +586,14 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
             print("Largest_cc_node_number: {}".format(len(G.nodes)))
             print("Largest_cc_edge_number: {}".format(len(G.edges)), file=f)
             print("Largest_cc_edge_number: {}".format(len(G.edges)))
-            print("Largest_cc_average_degree: {}".format(average_degree), file=f)
-            print("Largest_cc_average_degree: {}".format(average_degree))
+            print("Largest_cc_average_degree: {}".format(int(average_degree)), file=f)
+            print("Largest_cc_average_degree: {}".format(int(average_degree)))
             print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)), file=f)
             print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)))
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)), file=f)
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)))
+            print("Number_of_edge_cuts: {}".format(len(edge_cuts), file=f))
+            print("Number_of_node_cuts: {}".format(len(edge_cuts), file=f))
 
     else:
         strong_ifgs = []
