@@ -592,8 +592,6 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
             print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)))
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)), file=f)
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)))
-            print("Number_of_edge_cuts: {}".format(len(edge_cuts), file=f))
-            print("Number_of_node_cuts: {}".format(len(edge_cuts), file=f))
 
     else:
         strong_ifgs = []
