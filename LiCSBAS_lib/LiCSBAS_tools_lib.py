@@ -514,7 +514,7 @@ def edges_to_ifgdates(edges):
 
 
 
-def separate_strong_and_weak_links(ifg_list, component_statsfile):
+def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_cuts=True):
     """return a list of strong ifgs and a list of weak ifgs"""
     primarylist = []
     secondarylist = []
@@ -563,20 +563,27 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
             G = nx.Graph(Gs)
 
         # if the largest component network is not well-connected, highlight the edge cuts and node cuts
-        if nx.node_connectivity(G) < 2 or nx.edge_connectivity(G) < 3:
+        if nx.edge_connectivity(G) == 1:
             edge_cuts = edges_to_ifgdates(list(nx.bridges(G)))
+            if remove_cuts:
+                # remove edge cuts and extract the largest connected component
+                G.remove_edges_from(nx.bridges(G))
+                largest_cc = max(nx.connected_components(G), key=len)
+                Gs = nx.subgraph(G, largest_cc)
+                G = nx.Graph(Gs)
+
+        if nx.node_connectivity(G) == 1:
+            # output a record of the node_cuts
             node_cuts = []
             for i in list(nx.all_node_cuts(G)):
                 for j in list(i):
                     node_cuts.append(j)
-
-        # strong_ifgs = [p+'_'+s for p, s in zip(primarylist, secondarylist)]
-        # now only strong links in the largest component of the network is considered strong
-        strong_ifgs = sorted(edges_to_ifgdates(G.edges))
-        weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
-        weak_ifgs.sort()
-        print("{} edges in total".format(len(ifg_list)))
-        print("{} weak edges removed".format(len(weak_ifgs)))
+            if remove_cuts:
+                # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
+                G.remove_nodes_from(nx.all_node_cuts(G))
+                largest_cc = max(nx.connected_components(G), key=len)
+                Gs = nx.subgraph(G, largest_cc)
+                G = nx.Graph(Gs)
 
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
@@ -592,6 +599,13 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile):
             print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)))
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)), file=f)
             print("Largest_cc_node_connectivity: {}".format(nx.node_connectivity(G)))
+
+        # now only strong links in the largest connected component of the network is considered strong
+        strong_ifgs = sorted(edges_to_ifgdates(G.edges))
+        weak_ifgs = list(set(ifg_list)-set(strong_ifgs))
+        weak_ifgs.sort()
+        print("{} edges in total".format(len(ifg_list)))
+        print("{} weak edges removed".format(len(weak_ifgs)))
 
     else:
         strong_ifgs = []
