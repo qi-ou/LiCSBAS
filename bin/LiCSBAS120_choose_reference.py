@@ -80,6 +80,8 @@ def init_args():
     parser.add_argument('--w_hgt', default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_std_hgt")
     parser.add_argument('--refx', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="x axis fraction of desired ref center from left (default 0.5)")
     parser.add_argument('--refy', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="y axis fraction of desired ref center from top (default 0.5)")
+    parser.add_argument('--keep_edge_cuts', default=False, action='store_true', help="remove edge cuts from largest network component")
+    parser.add_argument('--keep_node_cuts', default=False, action='store_true', help="remove node cuts from largest network component")
     args = parser.parse_args()
 
 
@@ -340,7 +342,7 @@ def discard_ifg_with_all_nans_at_ref():
 def component_network_analysis(retained_ifgs):
     global strong_links, weak_links, edge_cuts, node_cuts
     print("Separate strong and weak links in the remaining network")
-    strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile)
+    strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile, remove_edge_cuts=not args.keep_edge_cuts, remove_node_cuts=not args.keep_node_cuts)
 
     # print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
     # export weak links
