@@ -514,7 +514,7 @@ def edges_to_ifgdates(edges):
 
 
 
-def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_cuts=True):
+def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cuts=True, remove_node_cuts=True):
     """return a list of strong ifgs and a list of weak ifgs"""
     primarylist = []
     secondarylist = []
@@ -563,9 +563,11 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_cuts=Tr
             G = nx.Graph(Gs)
 
         # if the largest component network is not well-connected, highlight the edge cuts and node cuts
-        if nx.edge_connectivity(G) == 1:
+        edge_connectivity = nx.edge_connectivity(G)
+        if edge_connectivity == 1:
+            print("Edge_connectivity={}".format(int(edge_connectivity)))
             edge_cuts = edges_to_ifgdates(list(nx.bridges(G)))
-            if remove_cuts:
+            if remove_edge_cuts:
                 # remove edge cuts and extract the largest connected component
                 G.remove_edges_from(nx.bridges(G))
                 largest_cc = max(nx.connected_components(G), key=len)
@@ -578,12 +580,14 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_cuts=Tr
             for i in list(nx.all_node_cuts(G)):
                 for j in list(i):
                     node_cuts.append(j)
-            if remove_cuts:
+            if remove_node_cuts:
                 # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
-                G.remove_nodes_from(nx.all_node_cuts(G))
-                largest_cc = max(nx.connected_components(G), key=len)
-                Gs = nx.subgraph(G, largest_cc)
-                G = nx.Graph(Gs)
+                while nx.node_connectivity(G) == 1:
+                    # iteratively remove the first node cut from all_node_cuts and see if the remaining largest component has node cuts
+                    G.remove_nodes_from(list(nx.all_node_cuts(G))[0])
+                    largest_cc = max(nx.connected_components(G), key=len)
+                    Gs = nx.subgraph(G, largest_cc)
+                    G = nx.Graph(Gs)
 
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
