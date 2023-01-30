@@ -135,7 +135,7 @@ def get_ifgdates():
     # ifgdates = list(set(ifgdates_all)-set(bad_ifg_all))
     # ifgdates.sort()
 
-    strong_ifgfile = os.path.join(infodir, '120strong_links.txt')
+    strong_ifgfile = os.path.join(infodir, '120strong_connected_links.txt')
     ifgdates = io_lib.read_ifg_list(strong_ifgfile)
     ifgdates.sort()
 
