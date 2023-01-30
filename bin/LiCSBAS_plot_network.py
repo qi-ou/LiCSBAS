@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """
+v1.1 20220130 Qi Ou, Uni of Leeds
 v1.0 20200225 Yu Morishita, Uni of Leeds and GSI
 
 ========
@@ -10,7 +11,7 @@ This script creates a png file (or in other formats) of SB network. A Gap of the
 =====
 Usage
 =====
-LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_list] [--not_plot_bad]
+LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_list] [--not_plot_bad] [--strong_connected]
 
  -i  Text file of ifg list (format: yyymmdd_yyyymmdd)
  -b  Text file of bperp list (format: yyyymmdd yyyymmdd bperp dt)
@@ -19,11 +20,14 @@ LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_li
      (see manual for matplotlib.pyplot.savefig)
  -r  Text file of bad ifg list to be plotted with red lines (format: yyymmdd_yyyymmdd)
  --not_plot_bad  Not plot bad ifgs with red lines
+ --strong_connected Separate strongly connected component from weak connections
 
 """
 
 #%% Change log
 '''
+v1.1 20220130 Qi Ou, Uni of Leeds
+ - Separate strongly connected component from weak links
 v1.0 20200225 Yu Morishita, Uni of Leeds and GSI
  - Original implementationf
 '''
@@ -62,6 +66,7 @@ def main(argv=None):
     pngfile = 'network.png'
     bad_ifgfile = []
     plot_bad_flag = True
+    strong_connected = False
 
 
     #%% Read options
@@ -84,6 +89,8 @@ def main(argv=None):
                 bad_ifgfile = a
             elif o == '--not_plot_bad':
                 plot_bad_flag = False
+            elif o == '--strong_connected':
+                strong_connected = True
 
         if not ifgfile:
             raise Usage('No ifg list given, -i is not optional!')
@@ -108,11 +115,41 @@ def main(argv=None):
 
     if bad_ifgfile:
         bad_ifgdates = io_lib.read_ifg_list(bad_ifgfile)
+        ifgdates = list(set(ifgdates)-set(bad_ifgdates))
     else:
         bad_ifgdates = []
 
-    #%% Plot image
-    plot_lib.plot_network(ifgdates, bperp, bad_ifgdates, pngfile, plot_bad_flag)
+    if strong_connected:
+        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,
+                                                                                                  "{}_stats.txt".format(os.path.split(ifgfile)[0]))
+        plot_lib.plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile,
+                                               plot_weak=True)
+        # export weak links
+        with open("{}_weak_links.txt".format(os.path.split(ifgfile)[0]), 'w') as f:
+            for i in weak_links:
+                print('{}'.format(i), file=f)
+
+        # export strong links
+        with open("{}_strong_links.txt".format(os.path.split(ifgfile)[0]), 'w') as f:
+            for i in strong_links:
+                print('{}'.format(i), file=f)
+
+        # export edge cuts
+        print("{} ifgs are edge cuts".format(len(edge_cuts)))
+        with open("{}_edge_cuts.txt".format(os.path.split(ifgfile)[0]), 'w') as f:
+            for i in edge_cuts:
+                print('{}'.format(i), file=f)
+                print('{}'.format(i))
+
+        # export edge cuts
+        print("{} epochs are node cuts".format(len(node_cuts)))
+        with open("{}_node_cuts.txt".format(os.path.split(ifgfile)[0]), 'w') as f:
+            for i in node_cuts:
+                print('{}'.format(i), file=f)
+                print('{}'.format(i))
+
+    else:    #%% Plot image
+        plot_lib.plot_network(ifgdates, bperp, bad_ifgdates, pngfile, plot_bad_flag)
 
 
     #%% Finish
