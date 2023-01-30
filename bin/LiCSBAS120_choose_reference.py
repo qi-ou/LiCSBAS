@@ -344,7 +344,6 @@ def component_network_analysis(retained_ifgs):
     print("Separate strong and weak links in the remaining network")
     strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile, remove_edge_cuts=not args.keep_edge_cuts, remove_node_cuts=not args.keep_node_cuts)
 
-    # print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
     # export weak links
     with open(weak_ifgfile, 'w') as f:
         for i in weak_links:
@@ -387,16 +386,11 @@ def plot_networks():
     #%% Plot network
     bperp = get_bperp_from_ifgdates(ifgdates)
 
-    pngfile = os.path.join(netdir, 'network120_all.png')
-    plot_lib.plot_network(ifgdates, bperp, [], pngfile)
-
-    # pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
-    # plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
+    pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
+    plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
 
     bperp = get_bperp_from_ifgdates(retained_ifgs)
     pngfile = os.path.join(netdir, 'network120_remain_strong_cuts.png')
-    # n_gap = plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
-    # print("There are {} gap(s) in the remaining network of {} strong-link ifgs".format(n_gap, len(strong_links)))
     plot_lib.plot_strong_weak_cuts_network(retained_ifgs, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
 
 
