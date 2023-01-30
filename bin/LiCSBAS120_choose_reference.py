@@ -342,7 +342,7 @@ def component_network_analysis(retained_ifgs):
     print("Separate strong and weak links in the remaining network")
     strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile)
 
-    print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
+    # print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
     # export weak links
     with open(weak_ifgfile, 'w') as f:
         for i in weak_links:

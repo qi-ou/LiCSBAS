@@ -589,10 +589,10 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_cuts=Tr
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]
         average_degree = np.mean(degrees)
         with open(component_statsfile, 'a') as f:
-            print("Largest_cc_node_number: {}".format(len(G.nodes)), file=f)
-            print("Largest_cc_node_number: {}".format(len(G.nodes)))
             print("Largest_cc_edge_number: {}".format(len(G.edges)), file=f)
             print("Largest_cc_edge_number: {}".format(len(G.edges)))
+            print("Largest_cc_node_number: {}".format(len(G.nodes)), file=f)
+            print("Largest_cc_node_number: {}".format(len(G.nodes)))
             print("Largest_cc_average_degree: {}".format(int(average_degree)), file=f)
             print("Largest_cc_average_degree: {}".format(int(average_degree)))
             print("Largest_cc_edge_connectivity: {}".format(nx.edge_connectivity(G)), file=f)
