@@ -563,9 +563,7 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
             G = nx.Graph(Gs)
 
         # if the largest component network is not well-connected, highlight the edge cuts and node cuts
-        edge_connectivity = nx.edge_connectivity(G)
-        if edge_connectivity == 1:
-            print("Edge_connectivity={}".format(int(edge_connectivity)))
+        if nx.edge_connectivity(G) == 1:
             edge_cuts = edges_to_ifgdates(list(nx.bridges(G)))
             if remove_edge_cuts:
                 # remove edge cuts and extract the largest connected component
