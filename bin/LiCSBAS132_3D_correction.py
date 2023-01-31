@@ -380,18 +380,18 @@ def correction_decision(res_list):
                         rms_res_integer_corrected))
 
                     # apply masked correction
-                    unw_corrected = unw - res_integer * 2 * np.pi
-                    masked_unw_corrected = unw - masked_res_integer * 2 * np.pi
+                    unmasked_unw_corrected = unw - res_integer * 2 * np.pi
+                    unw_corrected = unw - masked_res_integer * 2 * np.pi
                     rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - masked_res_integer) ** 2))
 
                     # plotting
                     int_list.append(pair)
                     png_path = os.path.join(integer_png_dir, '{}.png'.format(pair))
-                    plot_correction_by_integer(pair, unw, unw_corrected, masked_unw_corrected, masked_res_integer, res_num_2pi,
+                    plot_correction_by_integer(pair, unw, unmasked_unw_corrected, unw_corrected, masked_res_integer, res_num_2pi,
                                                    res_integer, res_rms, rms_res_integer_corrected,
                                                    rms_res_mask_corrected, png_path)
 
-                    del mask1, mask2, mask, masked_res_integer, unw_corrected, masked_unw_corrected, rms_res_mask_corrected
+                    del mask1, mask2, mask, masked_res_integer, unmasked_unw_corrected, rms_res_mask_corrected
 
                 # define output dir
                 correct_pair_dir = os.path.join(correct_dir, pair)
