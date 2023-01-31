@@ -307,7 +307,7 @@ def correction_decision(res_list):
 
             # apply masking
             mask = abs(res_num_2pi) > args.mask_thresh
-            res_num_2pi_masked = copy.copy(unw)
+            res_num_2pi_masked = copy.copy(res_num_2pi)
             res_num_2pi_masked[mask] = np.nan
             unw_masked = copy.copy(unw)
             unw_masked[mask] = np.nan
@@ -529,8 +529,6 @@ def plot_networks():
         component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_stats_file)
 
-        print("{} ifgs are well-connected".format(len(strong_links)))
-        print("{} ifgs are weak links".format(len(weak_links)))
         if len(strong_links) == 0:
             n_gap = 1
             strong_links = []  # dummy
