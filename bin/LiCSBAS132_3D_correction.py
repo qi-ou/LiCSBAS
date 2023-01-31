@@ -301,19 +301,30 @@ def correction_decision(res_list):
             good_list.append(pair)
             print("RMS residual = {:.2f}, good...".format(res_rms))
 
+            # load unw
+            unwfile = os.path.join(unwdir, pair, pair + '.unw')
+            unw = np.fromfile(unwfile, dtype=np.float32).reshape((length, width))
+
+            # apply masking
+            mask = abs(res_num_2pi) > args.mask_thresh
+            res_num_2pi_masked = copy.copy(unw)
+            res_num_2pi_masked[mask] = np.nan
+            unw_masked = copy.copy(unw)
+            unw_masked[mask] = np.nan
+
+            # plot good with masking
+            png_file = good_png_dir + '{}.png'.format(pair)
+            plot_masking(pair, unw, unw_masked, res_num_2pi, res_num_2pi_masked, png_file)
+
             # define output dir
             correct_pair_dir = os.path.join(correct_dir, pair)
             Path(correct_pair_dir).mkdir(parents=True, exist_ok=True)
 
-            # Link unw
-            unwfile = os.path.join(unwdir, pair, pair + '.unw')
-            linkfile = os.path.join(correct_pair_dir, pair + '.unw')
-            os.link(unwfile, linkfile)
+            # output file
+            masked_unwfile = os.path.join(correct_pair_dir, pair + '.unw')
+            unw_masked.flatten().tofile(masked_unwfile)
 
-            # plot good res
-            plot_good_res(pair, res_num_2pi, res_rms)
-
-            del res_num_2pi, res_rms
+            del res_num_2pi, res_rms, res_num_2pi_masked, mask, unw_masked
 
         else:
             print("RMS residual = {:2f}, not good...".format(res_rms))
@@ -337,7 +348,16 @@ def correction_decision(res_list):
                 con_file = os.path.join(ccdir, pair, pair + '.conncomp')
                 unw = np.fromfile(unwfile, dtype=np.float32).reshape((length, width))
                 con = np.fromfile(con_file, dtype=np.int8).reshape((length, width))
-                res_mode, rms_res_mode_corrected = calc_component_mode(con, res_integer, res_num_2pi)
+
+                # turn uncertain correction into masking
+                mask1 = np.logical_and(abs(res_num_2pi) > 0.2, abs(res_num_2pi) < 0.8)
+                mask2 = np.logical_and(abs(res_num_2pi) > 1.2, abs(res_num_2pi) < 1.8)
+                mask = np.logical_or(mask1, mask2)
+                masked_res_integer = copy.copy(res_integer)
+                masked_res_integer[mask] = np.nan
+
+                # calc masked mode correction
+                res_mode, rms_res_mode_corrected = calc_component_mode(con, masked_res_integer, res_num_2pi)
 
                 # 3.1 correct by component mode
                 if rms_res_mode_corrected < target_thresh:
@@ -346,23 +366,11 @@ def correction_decision(res_list):
                             rms_res_mode_corrected, target_thresh))
                     unw_corrected = unw - res_mode * 2 * np.pi
 
-                    # turn uncertain correction into masking
-                    mask1 = np.logical_and(abs(res_num_2pi) > 0.2, abs(res_num_2pi) < 0.8)
-                    mask2 = np.logical_and(abs(res_num_2pi) > 1.2, abs(res_num_2pi) < 1.8)
-                    mask = np.logical_or(mask1, mask2)
-                    res_mask = copy.copy(res_mode)
-                    res_mask[mask] = np.nan
-                    unw_masked = unw - res_mask * 2 * np.pi
-                    rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - res_mask) ** 2))
-
                     # plotting
                     mode_list.append(pair)
                     png_path = os.path.join(mode_png_dir, '{}.png'.format(pair))
-                    # plot_correction_by_mode(pair, unw, con, unw_corrected, res_num_2pi, res_integer, res_mode, res_rms,
-                    #                         rms_res_integer_corrected, rms_res_mode_corrected, png_path)
-                    plot_correction_by_mode(pair, unw, con, unw_masked, res_num_2pi, res_integer, res_mask, res_rms,
-                                            rms_res_integer_corrected, rms_res_mask_corrected, png_path)
-
+                    plot_correction_by_mode(pair, unw, con, unw_corrected, res_num_2pi, res_integer, res_mode, res_rms,
+                                            rms_res_integer_corrected, rms_res_mode_corrected, png_path)
 
                 # 3.2. correct by masked nearest integer
                 else:
@@ -371,23 +379,19 @@ def correction_decision(res_list):
                     print("Integer reduces rms residuals to {:.2f}, correcting by nearest integer...".format(
                         rms_res_integer_corrected))
 
+                    # apply masked correction
                     unw_corrected = unw - res_integer * 2 * np.pi
-
-                    # turn uncertain correction into masking
-                    mask1 = np.logical_and(abs(res_num_2pi) > 0.2, abs(res_num_2pi) < 0.8)
-                    mask2 = np.logical_and(abs(res_num_2pi) > 1.2, abs(res_num_2pi) < 1.8)
-                    mask = np.logical_or(mask1, mask2)
-                    res_mask = copy.copy(res_integer)
-                    res_mask[mask] = np.nan
-                    unw_masked = unw - res_mask * 2 * np.pi
-                    rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - res_mask) ** 2))
+                    masked_unw_corrected = unw - masked_res_integer * 2 * np.pi
+                    rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - masked_res_integer) ** 2))
 
                     # plotting
                     int_list.append(pair)
                     png_path = os.path.join(integer_png_dir, '{}.png'.format(pair))
-                    plot_correction_by_integer(pair, unw, unw_corrected, unw_masked, res_mask, res_num_2pi, res_integer, res_rms, rms_res_integer_corrected, rms_res_mask_corrected, png_path)
+                    plot_correction_by_integer(pair, unw, unw_corrected, masked_unw_corrected, masked_res_integer, res_num_2pi,
+                                                   res_integer, res_rms, rms_res_integer_corrected,
+                                                   rms_res_mask_corrected, png_path)
 
-                    del mask1, mask2, mask, res_mask, unw_masked, rms_res_mask_corrected
+                    del mask1, mask2, mask, masked_res_integer, unw_corrected, masked_unw_corrected, rms_res_mask_corrected
 
                 # define output dir
                 correct_pair_dir = os.path.join(correct_dir, pair)
@@ -522,7 +526,7 @@ def plot_networks():
         weak_links = [] # dummy
     else:
         # strong_links, weak_links = tools_lib.separate_strong_and_weak_links(retained_ifgs)
-        component_stats_file = os.path.join(netdir, 'network132_component_stats{}_{:.2f}_{:.2f}.png'.format(args.suffix, correction_thresh, target_thresh))
+        component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_stats_file)
 
         print("{} ifgs are well-connected".format(len(strong_links)))
