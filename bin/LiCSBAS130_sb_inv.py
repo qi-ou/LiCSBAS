@@ -154,6 +154,7 @@ def init_args():
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-m', dest='memory_size', default=2000, type=float, help="Max memory size for each patch in MB")
     parser.add_argument('-g', dest='gamma', default=0.0001, type=float, help="Gamma value for NSBAS inversion")
+    parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs")
     parser.add_argument('--suffix', default="", type=str, help="suffix of the output")
     parser.add_argument('--inv_alg', metavar="[LS|WLS]", default="WLS", help="Inversion algolism \n    LS :       NSBAS Least Square with no weight\n   WLS:       NSBAS Weighted Least Square (not well tested)\n              Weight (variance) is calculated by (1-coh**2)/(2*coh**2)")
     parser.add_argument('--n_unw_r_thre', metavar="THRE", type=float, help="Threshold of n_unw (number of used unwrap data) \n (Note this value is ratio to the number of images; i.e., 1.5*n_im) \n Larger number (e.g. 2.5) makes processing faster but result sparser. \n (Default: 1 and 0.5 for C- and L-band, respectively)")
@@ -287,7 +288,10 @@ def main():
 
     #%% Read date and network information
     ### Get all ifgdates in ifgdir
-    ifgdates = tools_lib.get_ifgdates(ifgdir)
+    if args.ifg_list:
+        ifgdates = io_lib.read_ifg_list(args.ifg_list)
+    else:
+        ifgdates = tools_lib.get_ifgdates(ifgdir)
     imdates = tools_lib.ifgdates2imdates(ifgdates)
     n_ifg = len(ifgdates)
     n_im = len(imdates)
