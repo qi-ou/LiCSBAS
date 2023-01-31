@@ -296,7 +296,8 @@ def correction_decision(res_list):
         print(pair)
         res_num_2pi, res_rms = load_res(i, length, width)
 
-        if res_rms < correction_thresh: # good
+        # 1. good
+        if res_rms < correction_thresh:
             good_list.append(pair)
             print("RMS residual = {:.2f}, good...".format(res_rms))
 
@@ -318,7 +319,9 @@ def correction_decision(res_list):
             print("RMS residual = {:2f}, not good...".format(res_rms))
             res_integer = np.round(res_num_2pi)
             rms_res_integer_corrected = np.sqrt(np.nanmean((res_num_2pi - res_integer) ** 2))
-            if rms_res_integer_corrected > target_thresh: # bad
+
+            # 2. bad
+            if rms_res_integer_corrected > target_thresh:
                 bad_list.append(pair)
                 print("Integer reduces rms residuals to {:.2f}, still above threshold of {:.2f}, discard...".format(
                     rms_res_integer_corrected, target_thresh))
@@ -327,6 +330,7 @@ def correction_decision(res_list):
 
                 del res_num_2pi, res_rms, res_integer, rms_res_integer_corrected
 
+            # 3. correction
             else:
                 # read in unwrapped ifg and connected components
                 unwfile = os.path.join(unwdir, pair, pair + '.unw')
@@ -335,20 +339,33 @@ def correction_decision(res_list):
                 con = np.fromfile(con_file, dtype=np.int8).reshape((length, width))
                 res_mode, rms_res_mode_corrected = calc_component_mode(con, res_integer, res_num_2pi)
 
-                # if component mode is useful
-                if rms_res_mode_corrected < target_thresh: # correct by component
+                # 3.1 correct by component mode
+                if rms_res_mode_corrected < target_thresh:
                     print(
                         "Component modes reduces rms residuals to {:.2f}, below target threshold of {:.2f}, correcting by component mode...".format(
                             rms_res_mode_corrected, target_thresh))
                     unw_corrected = unw - res_mode * 2 * np.pi
 
+                    # turn uncertain correction into masking
+                    mask1 = np.logical_and(abs(res_num_2pi) > 0.2, abs(res_num_2pi) < 0.8)
+                    mask2 = np.logical_and(abs(res_num_2pi) > 1.2, abs(res_num_2pi) < 1.8)
+                    mask = np.logical_or(mask1, mask2)
+                    res_mask = copy.copy(res_mode)
+                    res_mask[mask] = np.nan
+                    unw_masked = unw - res_mask * 2 * np.pi
+                    rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - res_mask) ** 2))
+
                     # plotting
                     mode_list.append(pair)
                     png_path = os.path.join(mode_png_dir, '{}.png'.format(pair))
-                    plot_correction_by_mode(pair, unw, con, unw_corrected, res_num_2pi, res_integer, res_mode, res_rms,
-                                            rms_res_integer_corrected, rms_res_mode_corrected, png_path)
+                    # plot_correction_by_mode(pair, unw, con, unw_corrected, res_num_2pi, res_integer, res_mode, res_rms,
+                    #                         rms_res_integer_corrected, rms_res_mode_corrected, png_path)
+                    plot_correction_by_mode(pair, unw, con, unw_masked, res_num_2pi, res_integer, res_mask, res_rms,
+                                            rms_res_integer_corrected, rms_res_mask_corrected, png_path)
 
-                else:  # if component mode is not useful, correct by integer for pixel of high confidence, mask pixel of low confidence
+
+                # 3.2. correct by masked nearest integer
+                else:
                     print("Component modes reduces rms residuals to {:.2f}, above threshold of {:.2f}...".format(
                         rms_res_mode_corrected, target_thresh))
                     print("Integer reduces rms residuals to {:.2f}, correcting by nearest integer...".format(
@@ -504,7 +521,10 @@ def plot_networks():
         strong_links = [] # dummy
         weak_links = [] # dummy
     else:
-        strong_links, weak_links = tools_lib.separate_strong_and_weak_links(retained_ifgs)
+        # strong_links, weak_links = tools_lib.separate_strong_and_weak_links(retained_ifgs)
+        component_stats_file = os.path.join(netdir, 'network132_component_stats{}_{:.2f}_{:.2f}.png'.format(args.suffix, correction_thresh, target_thresh))
+        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_stats_file)
+
         print("{} ifgs are well-connected".format(len(strong_links)))
         print("{} ifgs are weak links".format(len(weak_links)))
         if len(strong_links) == 0:
@@ -530,12 +550,12 @@ def plot_networks():
             plot_lib.plot_corrected_network(retained_ifgs, bperp, corrected_ifgs, pngfile)
 
             pngfile = os.path.join(netdir, 'network132_all_retained{}_{:.2f}_{:.2f}.png'.format(args.suffix, correction_thresh, target_thresh))
-            n_gap = plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
-    return n_gap, strong_links, weak_links
+            plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
+    return n_im, strong_links, weak_links
 
 
 def correction_main():
-    global correction_thresh, target_thresh, bad_ifg_not_corrected, ifg_corrected_by_mode, ifg_corrected_by_integer, good_ifg
+    global bad_ifg_not_corrected, ifg_corrected_by_mode, ifg_corrected_by_integer, good_ifg  #correction_thresh, target_thresh,
 
     # set up empty decision lists
     ifg_corrected_by_mode = []
@@ -545,32 +565,33 @@ def correction_main():
 
     perform_correction()
     save_lists()
-    n_gap, strong_links, weak_links = plot_networks()
+    plot_networks()
 
-    while n_gap > 0:  # loosen correction and target thresholds until the network has no gap even after removing weak links
-        print("n_gap=" + str(n_gap)+", increase correction_thresh and target_thresh by 0.05")
-        correction_thresh += 0.05
-        target_thresh += 0.05
-
-        print("Correction_thres = {}".format(correction_thresh))
-        print("Target_thres = {}".format(target_thresh))
-        print("Consider correcting {} bad ifgs".format(len(bad_ifg_not_corrected)))
-
-        if len(bad_ifg_not_corrected) == 0:
-            sys.exit("No more bad ifgs for correcting...")
-
-        perform_correction(bad_ifg_not_corrected)
-        save_lists()
-        n_gap, strong_links, weak_links = plot_networks()
-
-    if args.move_weak:
-        # move weak ifgs to subfolder
-        weak_ifg_dir = os.path.join(correct_dir, "weak_links")
-        Path(weak_ifg_dir).mkdir(parents=True, exist_ok=True)
-        for pair in weak_links:
-            unw_folder = os.path.join(correct_dir, pair)
-            dest_folder = os.path.join(weak_ifg_dir, pair)
-            shutil.move(unw_folder, dest_folder)
+    # n_im, strong_links, weak_links =
+    # while n_gap > 0:  # loosen correction and target thresholds until the network has no gap even after removing weak links
+    #     print("n_gap=" + str(n_gap)+", increase correction_thresh and target_thresh by 0.05")
+    #     correction_thresh += 0.05
+    #     target_thresh += 0.05
+    #
+    #     print("Correction_thres = {}".format(correction_thresh))
+    #     print("Target_thres = {}".format(target_thresh))
+    #     print("Consider correcting {} bad ifgs".format(len(bad_ifg_not_corrected)))
+    #
+    #     if len(bad_ifg_not_corrected) == 0:
+    #         sys.exit("No more bad ifgs for correcting...")
+    #
+    #     perform_correction(bad_ifg_not_corrected)
+    #     save_lists()
+    #     n_gap, strong_links, weak_links = plot_networks()
+    #
+    # if args.move_weak:
+    #     # move weak ifgs to subfolder
+    #     weak_ifg_dir = os.path.join(correct_dir, "weak_links")
+    #     Path(weak_ifg_dir).mkdir(parents=True, exist_ok=True)
+    #     for pair in weak_links:
+    #         unw_folder = os.path.join(correct_dir, pair)
+    #         dest_folder = os.path.join(weak_ifg_dir, pair)
+    #         shutil.move(unw_folder, dest_folder)
 
 
 def perform_masking():
