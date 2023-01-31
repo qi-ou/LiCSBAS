@@ -72,7 +72,7 @@ def main(argv=None):
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "h:i:b:o:r:s:", ["help", "not_plot_bad"])
+            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:s", ["help", "not_plot_bad"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
