@@ -108,7 +108,7 @@ def finish():
 
 
 def set_input_output():
-    global ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile, edge_cut_ifgfile, node_cut_ifgfile, component_statsfile
+    global ccdir, ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile, edge_cut_ifgfile, node_cut_ifgfile, component_statsfile
 
     ### Define input directories
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))
