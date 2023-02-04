@@ -107,6 +107,7 @@ def init_args():
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series and residuals")
     parser.add_argument('-s', dest='correction_thresh', type=float, help="RMS residual per ifg (in 2pi) for correction, override info/131resid_2pi.txt")
     parser.add_argument('-g', dest='target_thresh', default='thresh', choices=['mode', 'median', 'mean', 'thresh'], help="RMS residual per ifg (in 2pi) for accepting the correction, read from info/131resid_2pi.txt, or follow correction_thresh if given")
+    parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs")
     parser.add_argument('--suffix', default="", type=str, help="suffix of the input 131resid_2pi*.txt and outputs")
     parser.add_argument('-n', dest='n_para', type=int, help="number of processes for parallel processing")
     parser.add_argument('--move_weak',  action='store_true', help="move ifgs forming weak links to subfolder of correct_dir")
@@ -214,7 +215,11 @@ def get_para():
         n_para = args.n_para
 
     # check .res files exist
-    res_list = glob.glob(os.path.join(resdir, '*.res'))
+    if args.ifg_list:
+        ifgdates = io_lib.read_ifg_list(args.ifg_list)
+        res_list = [os.path.join(resdir, '{}.res'.format(ifg)) for ifg in ifgdates]
+    else:
+        res_list = glob.glob(os.path.join(resdir, '*.res'))
     if len(res_list) == 0:
         sys.exit('No ifgs for correcting...\nCheck if there are *res files in the directory {}'.format(resdir))
 
