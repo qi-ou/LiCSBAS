@@ -533,9 +533,12 @@ def select_ifgs_by_months(ifg_list, allowed_month=[], strict=True):
     return selected_ifgs
 
 def calc_temporal_baseline(ifg_list):
-    mday = dt.datetime.strptime(ifg_list[:8], '%Y%m%d').toordinal()
-    sday = dt.datetime.strptime(ifg_list[-8:], '%Y%m%d').toordinal()
-    dt_ifg = sday - mday
+    dt = []
+    for ifg in ifg_list:
+        mday = dt.datetime.strptime(ifg[:8], '%Y%m%d').toordinal()
+        sday = dt.datetime.strptime(ifg[-8:], '%Y%m%d').toordinal()
+        dt_ifg = sday - mday
+        dt.append(dt_ifg)
     return dt_ifg
 
 def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cuts=True, remove_node_cuts=True):
