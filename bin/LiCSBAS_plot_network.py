@@ -100,9 +100,9 @@ def main(argv=None):
                 strong_connected = True
             elif o == '-m':
                 months = a
-                if type(months) != list:
-                    print(months, type(months))
-                    raise Usage("-m months has to be a list.")
+                # if type(months) != list:
+                #     print(months, type(months))
+                #     raise Usage("-m months has to be a list.")
             elif o == '-t':
                 thresh = float(a)
             elif o == '--not_strict':
