@@ -74,6 +74,7 @@ def main(argv=None):
     strong_connected = False
     suffix = ""
     strict = True
+    months = False
 
 
     #%% Read options
