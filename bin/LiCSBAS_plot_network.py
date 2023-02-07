@@ -183,6 +183,7 @@ def main(argv=None):
                 print('{}'.format(i))
 
     else:    #%% Plot image
+        pngfile = "{}{}_network.png".format(basename, suffix)
         plot_lib.plot_network(ifgdates, bperp, bad_ifgdates, pngfile, plot_bad_flag)
 
 
