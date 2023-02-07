@@ -141,8 +141,8 @@ def main(argv=None):
 
     if thresh:
         dt = tools_lib.calc_temporal_baseline(ifgdates)
-        ifgdates = [ifg for ifg, t in zip(ifgdates, dt) if t > thresh]
         shortifg = [ifg for ifg, t in zip(ifgdates, dt) if t <= thresh]
+        ifgdates = list(set(ifgdates)-set(shortifg))
         suffix = suffix + "_dt_gt_{}".format(thresh)
         # export short links
         with open("{}_short_links{}.txt".format(basename, suffix), 'w') as f:
