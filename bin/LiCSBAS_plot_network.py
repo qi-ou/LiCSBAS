@@ -141,7 +141,6 @@ def main(argv=None):
 
     if thresh:
         dt = tools_lib.calc_temporal_baseline(ifgdates)
-        ifgdates = ifgdates[dt>thresh]
         ifgdates = [ifg for ifg, t in zip(ifgdates, dt) if t > thresh]
         shortifg = [ifg for ifg, t in zip(ifgdates, dt) if t <= thresh]
         suffix = suffix + "_dt_gt_{}".format(thresh)
