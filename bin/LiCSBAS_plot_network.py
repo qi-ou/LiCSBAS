@@ -21,7 +21,7 @@ LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_li
  -r  Text file of bad ifg list to be plotted with red lines (format: yyymmdd_yyyymmdd)
  --not_plot_bad  Not plot bad ifgs with red lines
  -s Separate strongly connected component from weak connections
- -m List of allowed months
+ -m Allowed months (eg. 3.4.5.12, months separated by period, order doesn't matter)
  -t lower bound of temporal baseline
 
 """
