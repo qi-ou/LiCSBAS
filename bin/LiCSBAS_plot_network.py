@@ -75,6 +75,7 @@ def main(argv=None):
     suffix = ""
     strict = True
     months = False
+    thresh = False
 
 
     #%% Read options
