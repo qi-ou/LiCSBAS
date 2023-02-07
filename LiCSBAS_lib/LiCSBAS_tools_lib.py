@@ -513,6 +513,30 @@ def edges_to_ifgdates(edges):
     return ifgdates
 
 
+def select_ifgs_by_months(ifg_list, allowed_month=[], strict=True):
+    """ Choose IFGs based on a list of allowed months
+    strict = True: both epochs have to be in the allowed month
+    strict = False: either epoch can be in the allowed month
+    """
+    primary_month = []
+    secondary_month = []
+    for pairs in ifg_list:
+        primary_month.append(int(pairs[4:6]))
+        secondary_month.append(int(pairs[13:15]))
+    primary_month_allowed = [month in allowed_month for month in primary_month]
+    secondary_month_allowed = [month in allowed_month for month in secondary_month]
+    if strict:
+        mask = [a and b for a, b in zip(primary_month_allowed, secondary_month_allowed)]
+    else:
+        mask = [a or b for a, b in zip(primary_month_allowed, secondary_month_allowed)]
+    selected_ifgs = [i for (i, v) in zip(ifg_list, mask) if v]
+    return selected_ifgs
+
+def calc_temporal_baseline(ifg_list):
+    mday = dt.datetime.strptime(ifg_list[:8], '%Y%m%d').toordinal()
+    sday = dt.datetime.strptime(ifg_list[-8:], '%Y%m%d').toordinal()
+    dt_ifg = sday - mday
+    return dt_ifg
 
 def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cuts=True, remove_node_cuts=True):
     """return a list of strong ifgs and a list of weak ifgs"""

@@ -21,12 +21,17 @@ LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_li
  -r  Text file of bad ifg list to be plotted with red lines (format: yyymmdd_yyyymmdd)
  --not_plot_bad  Not plot bad ifgs with red lines
  -s Separate strongly connected component from weak connections
+ -m List of allowed months
+ -t lower bound of temporal baseline
 
 """
 
 #%% Change log
 '''
-v1.1 20220130 Qi Ou, Uni of Leeds
+v1.2 20230207 Qi Ou, Uni of Leeds
+ - keep only summer epochs
+ - remove short temporal baseline ifgs
+v1.1 20230130 Qi Ou, Uni of Leeds
  - Separate strongly connected component from weak links
 v1.0 20200225 Yu Morishita, Uni of Leeds and GSI
  - Original implementationf
@@ -67,12 +72,14 @@ def main(argv=None):
     bad_ifgfile = []
     plot_bad_flag = True
     strong_connected = False
+    suffix = ""
+    strict = True
 
 
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:s", ["help", "not_plot_bad"])
+            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:", ["help", "not_plot_bad", "not_strict"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -91,6 +98,15 @@ def main(argv=None):
                 plot_bad_flag = False
             elif o == '-s':
                 strong_connected = True
+            elif o == '-m':
+                months = a
+                if type(months) != list:
+                    raise Usage("-m months has to be a list.")
+            elif o == '-t':
+                thresh = float(a)
+            elif o == '--not_strict':
+                strict = False
+
 
         if not ifgfile:
             raise Usage('No ifg list given, -i is not optional!')
@@ -100,6 +116,7 @@ def main(argv=None):
             raise Usage('No bperp list given, -b is not optional!')
         elif not os.path.exists(bperpfile):
             raise Usage('No {} exists!'.format(bperpfile))
+
 
     except Usage as err:
         print("\nERROR:", file=sys.stderr, end='')
@@ -120,19 +137,28 @@ def main(argv=None):
     else:
         bad_ifgdates = []
 
+    if months:
+        ifgdates = tools_lib.select_ifgs_by_months(ifgdates, allowed_month=months, strict=strict)
+        suffix = suffix + "_months{}".format(months)
+
+    if thresh:
+        dt = tools_lib.calc_temporal_baseline(ifgdates)
+        ifgdates = ifgdates[dt>thresh]
+        suffix = suffix + "_dt_gt_{}".format(thresh)
+
     if strong_connected:
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,
                                                                                                   "{}_stats.txt".format(basename))
-        pngfile = "{}_strongly_connected_network.png".format(basename)
+        pngfile = "{}_strongly_connected_network{}.png".format(basename, suffix)
         plot_lib.plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile,
                                                plot_weak=True)
         # export weak links
-        with open("{}_weak_links.txt".format(basename), 'w') as f:
+        with open("{}_weak_links{}.txt".format(basename, suffix), 'w') as f:
             for i in weak_links:
                 print('{}'.format(i), file=f)
 
         # export strong links
-        with open("{}_strong_links.txt".format(basename), 'w') as f:
+        with open("{}_strong_links{}.txt".format(basename, suffix), 'w') as f:
             for i in strong_links:
                 print('{}'.format(i), file=f)
 
