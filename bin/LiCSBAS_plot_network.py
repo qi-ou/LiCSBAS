@@ -101,6 +101,7 @@ def main(argv=None):
             elif o == '-m':
                 months = a
                 if type(months) != list:
+                    print(months)
                     raise Usage("-m months has to be a list.")
             elif o == '-t':
                 thresh = float(a)
