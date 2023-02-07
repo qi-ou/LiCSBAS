@@ -127,8 +127,6 @@ def main(argv=None):
 
     #%% Read info
     ifgdates = io_lib.read_ifg_list(ifgfile)
-    imdates = tools_lib.ifgdates2imdates(ifgdates)
-    bperp = io_lib.read_bperp_file(bperpfile, imdates)
     basename = os.path.basename(ifgfile).split('.')[0]
 
     if bad_ifgfile:
@@ -150,6 +148,10 @@ def main(argv=None):
         with open("{}_short_links{}.txt".format(basename, suffix), 'w') as f:
             for i in shortifg:
                 print('{}'.format(i), file=f)
+
+    # extract bperp after modifying ifgdates
+    imdates = tools_lib.ifgdates2imdates(ifgdates)
+    bperp = io_lib.read_bperp_file(bperpfile, imdates)
 
     if strong_connected:
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,
