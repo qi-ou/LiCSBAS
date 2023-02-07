@@ -523,6 +523,8 @@ def select_ifgs_by_months(ifg_list, allowed_month=[], strict=True):
     for pairs in ifg_list:
         primary_month.append(int(pairs[4:6]))
         secondary_month.append(int(pairs[13:15]))
+    for i in allowed_month:
+        print(i)
     primary_month_allowed = [str(month) in allowed_month for month in primary_month]
     secondary_month_allowed = [str(month) in allowed_month for month in secondary_month]
     if strict:

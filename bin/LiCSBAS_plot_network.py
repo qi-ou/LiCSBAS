@@ -137,8 +137,6 @@ def main(argv=None):
 
     if months:
         ifgdates = tools_lib.select_ifgs_by_months(ifgdates, allowed_month=months, strict=strict)
-        for i in months:
-            print(i)
         suffix = suffix + "_months{}".format(months)
 
     if thresh:
