@@ -100,9 +100,6 @@ def main(argv=None):
                 strong_connected = True
             elif o == '-m':
                 months = a
-                # if type(months) != list:
-                #     print(months, type(months))
-                #     raise Usage("-m months has to be a list.")
             elif o == '-t':
                 thresh = float(a)
             elif o == '--not_strict':
@@ -145,7 +142,13 @@ def main(argv=None):
     if thresh:
         dt = tools_lib.calc_temporal_baseline(ifgdates)
         ifgdates = ifgdates[dt>thresh]
+        ifgdates = [ifg for ifg, t in zip(ifgdates, dt) if t > thresh]
+        shortifg = [ifg for ifg, t in zip(ifgdates, dt) if t <= thresh]
         suffix = suffix + "_dt_gt_{}".format(thresh)
+        # export short links
+        with open("{}_short_links{}.txt".format(basename, suffix), 'w') as f:
+            for i in shortifg:
+                print('{}'.format(i), file=f)
 
     if strong_connected:
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,

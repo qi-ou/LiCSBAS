@@ -503,7 +503,7 @@ def plot_coloured_network(ifgdates, bperp, perc_list, pngfile):
     plt.close()
 
 
-def plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True):
+def plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, short_ifg=None, plot_weak=True):
     """
     Plot network of interferometric pairs.
 
@@ -548,6 +548,15 @@ def plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_c
             plt.plot([imdates_dt_all[ix_m], imdates_dt_all[ix_s]],
                      [bperp[ix_m], bperp[ix_s]],
                      color='grey', alpha=0.6, zorder=6, label=label)
+
+    if short_ifg:
+        for i, ifgd in enumerate(short_ifg):
+            ix_m = imdates_all.index(ifgd[:8])
+            ix_s = imdates_all.index(ifgd[-8:])
+            label = 'short_links' if i == 0 else ''  # label only first
+            plt.plot([imdates_dt_all[ix_m], imdates_dt_all[ix_s]],
+                     [bperp[ix_m], bperp[ix_s]],
+                     color='yellow', alpha=0.6, zorder=6, label=label)
 
     for i, ifgd in enumerate(edge_cuts):
         ix_m = imdates_all.index(ifgd[:8])
