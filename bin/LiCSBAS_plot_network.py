@@ -137,6 +137,8 @@ def main(argv=None):
 
     if months:
         ifgdates = tools_lib.select_ifgs_by_months(ifgdates, allowed_month=months, strict=strict)
+        for i in months:
+            print(i)
         suffix = suffix + "_months{}".format(months)
 
     if thresh:
@@ -156,15 +158,15 @@ def main(argv=None):
     if strong_connected:
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,
                                                                                                   "{}_stats.txt".format(basename))
-        pngfile = "{}_strongly_connected_network{}.png".format(basename, suffix)
+        pngfile = "{}{}_strongly_connected_network.png".format(basename, suffix)
         plot_lib.plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
         # export weak links
-        with open("{}_weak_links{}.txt".format(basename, suffix), 'w') as f:
+        with open("{}{}_weak_links.txt".format(basename, suffix), 'w') as f:
             for i in weak_links:
                 print('{}'.format(i), file=f)
 
         # export strong links
-        with open("{}_strong_links{}.txt".format(basename, suffix), 'w') as f:
+        with open("{}{}_strong_links.txt".format(basename, suffix), 'w') as f:
             for i in strong_links:
                 print('{}'.format(i), file=f)
 
