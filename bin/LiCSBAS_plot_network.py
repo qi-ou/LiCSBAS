@@ -141,7 +141,7 @@ def main(argv=None):
         ifgdates = ifgdates_allowed_months
         suffix = suffix + "_months{}".format(months)
         # export short links
-        with open("{}_other_than_months{}.txt".format(basename, suffix), 'w') as f:
+        with open("{}_other_than{}.txt".format(basename, suffix), 'w') as f:
             for i in ifgdates_other_months:
                 print('{}'.format(i), file=f)
 
