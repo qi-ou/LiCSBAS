@@ -136,8 +136,14 @@ def main(argv=None):
         bad_ifgdates = []
 
     if months:
-        ifgdates = tools_lib.select_ifgs_by_months(ifgdates, allowed_month=months, strict=strict)
+        ifgdates_allowed_months = tools_lib.select_ifgs_by_months(ifgdates, allowed_month=months, strict=strict)
+        ifgdates_other_months = list(set(ifgdates) - set(ifgdates_allowed_months))
+        ifgdates = ifgdates_allowed_months
         suffix = suffix + "_months{}".format(months)
+        # export short links
+        with open("{}_other_than_months{}.txt".format(basename, suffix), 'w') as f:
+            for i in ifgdates_other_months:
+                print('{}'.format(i), file=f)
 
     if thresh:
         dt = tools_lib.calc_temporal_baseline(ifgdates)
