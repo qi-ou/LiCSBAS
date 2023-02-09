@@ -161,17 +161,17 @@ def main(argv=None):
         suffix = suffix + "_months{}".format(months)
         # export list
         if strict:
-            with open("{}_either_out{}.txt".format(basename, suffix), 'w') as f:
+            with open("{}{}_either_out.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates_other_months:
                     print('{}'.format(i), file=f)
-            with open("{}_strictly_in{}.txt".format(basename, suffix), 'w') as f:
+            with open("{}{}_strictly_in.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates:
                     print('{}'.format(i), file=f)
         else:
-            with open("{}_both_out{}.txt".format(basename, suffix), 'w') as f:
+            with open("{}{}_both_out.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates_other_months:
                     print('{}'.format(i), file=f)
-            with open("{}_either_in{}.txt".format(basename, suffix), 'w') as f:
+            with open("{}{}_either_in.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates:
                     print('{}'.format(i), file=f)
 
