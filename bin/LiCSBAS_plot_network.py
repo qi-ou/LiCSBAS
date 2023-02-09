@@ -76,12 +76,14 @@ def main(argv=None):
     strict = True
     months = False
     thresh = False
+    remove_edge_cuts = True
+    remove_node_cuts = True
 
 
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:", ["help", "not_plot_bad", "not_strict"])
+            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:en", ["help", "not_plot_bad", "not_strict"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -106,6 +108,10 @@ def main(argv=None):
                 thresh = float(a)
             elif o == '--not_strict':
                 strict = False
+            elif o == '-e':
+                remove_edge_cuts = False
+            elif o == '-n':
+                remove_node_cuts = False
 
 
         if not ifgfile:
@@ -139,10 +145,13 @@ def main(argv=None):
         dt = tools_lib.calc_temporal_baseline(ifgdates)
         shortifg = [ifg for ifg, t in zip(ifgdates, dt) if t <= thresh]
         ifgdates = list(set(ifgdates)-set(shortifg))
-        suffix = suffix + "_dt_gt_{}".format(thresh)
-        # export short links
-        with open("{}_short_links{}.txt".format(basename, suffix), 'w') as f:
+        suffix = suffix + "_dt_gt_{}".format(int(thresh))
+        # export list
+        with open("{}_dt_le_{}.txt".format(basename, int(thresh)), 'w') as f:
             for i in shortifg:
+                print('{}'.format(i), file=f)
+        with open("{}_dt_gt_{}.txt".format(basename, int(thresh)), 'w') as f:
+            for i in ifgdates:
                 print('{}'.format(i), file=f)
 
     if months:
@@ -150,18 +159,29 @@ def main(argv=None):
         ifgdates_other_months = list(set(ifgdates) - set(ifgdates_allowed_months))
         ifgdates = ifgdates_allowed_months
         suffix = suffix + "_months{}".format(months)
-        # export short links
-        with open("{}_other_than{}.txt".format(basename, suffix), 'w') as f:
-            for i in ifgdates_other_months:
-                print('{}'.format(i), file=f)
+        # export list
+        if strict:
+            with open("{}_either_out{}.txt".format(basename, suffix), 'w') as f:
+                for i in ifgdates_other_months:
+                    print('{}'.format(i), file=f)
+            with open("{}_strictly_in{}.txt".format(basename, suffix), 'w') as f:
+                for i in ifgdates:
+                    print('{}'.format(i), file=f)
+        else:
+            with open("{}_both_out{}.txt".format(basename, suffix), 'w') as f:
+                for i in ifgdates_other_months:
+                    print('{}'.format(i), file=f)
+            with open("{}_either_in{}.txt".format(basename, suffix), 'w') as f:
+                for i in ifgdates:
+                    print('{}'.format(i), file=f)
 
     # extract bperp after modifying ifgdates
     imdates = tools_lib.ifgdates2imdates(ifgdates)
     bperp = io_lib.read_bperp_file(bperpfile, imdates)
 
     if strong_connected:
-        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgdates,
-                                                                                                  "{}_stats.txt".format(basename))
+        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(
+            ifgdates, "{}_stats.txt".format(basename), remove_edge_cuts=remove_edge_cuts, remove_node_cuts=remove_node_cuts)
         pngfile = "{}{}_strongly_connected_network.png".format(basename, suffix)
         plot_lib.plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
         # export weak links

@@ -82,8 +82,8 @@ def init_args():
     parser.add_argument('--w_hgt', default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_std_hgt")
     parser.add_argument('--refx', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="x axis fraction of desired ref center from left (default 0.5)")
     parser.add_argument('--refy', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="y axis fraction of desired ref center from top (default 0.5)")
-    parser.add_argument('--keep_edge_cuts', default=False, action='store_true', help="remove edge cuts from largest network component")
-    parser.add_argument('--keep_node_cuts', default=False, action='store_true', help="remove node cuts from largest network component")
+    parser.add_argument('--keep_edge_cuts', default=False, action='store_true', help="do not remove edge cuts from largest network component")
+    parser.add_argument('--keep_node_cuts', default=False, action='store_true', help="do not remove node cuts from largest network component")
     args = parser.parse_args()
 
 
