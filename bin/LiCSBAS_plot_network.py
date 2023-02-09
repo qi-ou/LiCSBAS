@@ -164,7 +164,7 @@ def main(argv=None):
             with open("{}{}_either_out.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates_other_months:
                     print('{}'.format(i), file=f)
-            with open("{}{}_strictly_in.txt".format(basename, suffix), 'w') as f:
+            with open("{}{}_both_in.txt".format(basename, suffix), 'w') as f:
                 for i in ifgdates:
                     print('{}'.format(i), file=f)
         else:
