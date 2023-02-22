@@ -70,16 +70,20 @@ def init_args():
     global args
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest="frame_dir", default="./", help="directory of LiCSBAS output of a particular frame")
+    parser.add_argument('-c', dest='cc_dir', default="GEOCml10GACOS", help="folder containing cc input")
     parser.add_argument('-g', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-w', dest='win', default="5", type=float, help="Window size in km")
     parser.add_argument('-p', dest='percentile', default=90, type=float, choices=range(0, 100), metavar="[0-100]", help="proxy percentile above which the window nearest to desired center will be chosen as the reference window")
+    parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs")
     parser.add_argument("--w_unw", default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_sum_unw_pixel")
     parser.add_argument('--w_coh', default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_sum_coherence")
     parser.add_argument('--w_con', default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_sum_component_size")
     parser.add_argument('--w_hgt', default=1, choices=range(0, 1), metavar="[0-1]", type=float, help="weight for block_std_hgt")
     parser.add_argument('--refx', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="x axis fraction of desired ref center from left (default 0.5)")
     parser.add_argument('--refy', default=0.5, choices=range(0, 1), metavar="[0-1]", type=float, help="y axis fraction of desired ref center from top (default 0.5)")
+    parser.add_argument('--keep_edge_cuts', default=False, action='store_true', help="do not remove edge cuts from largest network component")
+    parser.add_argument('--keep_node_cuts', default=False, action='store_true', help="do not remove node cuts from largest network component")
     args = parser.parse_args()
 
 
@@ -104,9 +108,10 @@ def finish():
 
 
 def set_input_output():
-    global ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile, edge_cut_ifgfile, node_cut_ifgfile, component_statsfile
+    global ccdir, ifgdir, tsadir, infodir, resultsdir, netdir, noref_ifgfile, no_ref_dir, reference_png, weak_ifgfile, strong_ifgfile, edge_cut_ifgfile, node_cut_ifgfile, component_statsfile
 
     ### Define input directories
+    ccdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))
     ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     resultsdir = os.path.join(tsadir, 'results')
@@ -129,7 +134,7 @@ def read_length_width():
     global length, width
 
     ### Get size
-    mlipar = os.path.join(ifgdir, 'slc.mli.par')
+    mlipar = os.path.join(ccdir, 'slc.mli.par')
     width = int(io_lib.get_param_par(mlipar, 'range_samples'))
     length = int(io_lib.get_param_par(mlipar, 'azimuth_lines'))
     print("\nSize         : {} x {}".format(width, length), flush=True)
@@ -138,7 +143,7 @@ def read_length_width():
 def decide_reference_window_size():
     global window_size
     ### Get resolution
-    dempar = os.path.join(ifgdir, 'EQA.dem_par')
+    dempar = os.path.join(ccdir, 'EQA.dem_par')
     lattitude_resolution = float(io_lib.get_param_par(dempar, 'post_lat'))
     window_size = int(abs(args.win / 110 / lattitude_resolution) + 0.5)   # 110 km per degree latitude
     print("\nWindow size : ", window_size)
@@ -146,16 +151,18 @@ def decide_reference_window_size():
 
 def get_ifgdates():
     global ifgdates
+    if args.ifg_list:
+        ifgdates = io_lib.read_ifg_list(args.ifg_list)
+    else:
+        ### Get dates
+        ifgdates = tools_lib.get_ifgdates(ifgdir)
 
-    ### Get dates
-    ifgdates = tools_lib.get_ifgdates(ifgdir)
+        ### Read bad_ifg11 and rm_ifg
+        bad_ifg11file = os.path.join(infodir, '11bad_ifg.txt')
+        bad_ifg11 = io_lib.read_ifg_list(bad_ifg11file)
 
-    ### Read bad_ifg11 and rm_ifg
-    bad_ifg11file = os.path.join(infodir, '11bad_ifg.txt')
-    bad_ifg11 = io_lib.read_ifg_list(bad_ifg11file)
-
-    ### Remove bad ifgs and images from list
-    ifgdates = list(set(ifgdates)-set(bad_ifg11))
+        ### Remove bad ifgs and images from list
+        ifgdates = list(set(ifgdates)-set(bad_ifg11))
     ifgdates.sort()
 
 
@@ -175,13 +182,13 @@ def calc_block_sum_of_unw_coh_component_size():
         n_unw += ~np.isnan(unw) # Summing number of unnan unw
 
         # coherence values from 0 to 1
-        ccfile = os.path.join(ifgdir, ifgd, ifgd + '.cc')
+        ccfile = os.path.join(ccdir, ifgd, ifgd + '.cc')
         coh = io_lib.read_img(ccfile, length, width, np.uint8)
         coh = coh.astype(np.float32) / 255  # keep 0 as 0 which represent nan values
         n_coh += coh
 
         # connected components in terms of component area (pixel count)
-        confile = os.path.join(ifgdir, ifgd, ifgd+'.conncomp')
+        confile = os.path.join(ccdir, ifgd, ifgd+'.conncomp')
         con = io_lib.read_img(confile, length, width, np.uint8)
         # replace component index by component size. the first component is the 0th component, which should be of size 0
         uniq_components, pixel_counts = np.unique(con.flatten(), return_counts=True)
@@ -340,9 +347,8 @@ def discard_ifg_with_all_nans_at_ref():
 def component_network_analysis(retained_ifgs):
     global strong_links, weak_links, edge_cuts, node_cuts
     print("Separate strong and weak links in the remaining network")
-    strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile)
+    strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_statsfile, remove_edge_cuts=not args.keep_edge_cuts, remove_node_cuts=not args.keep_node_cuts)
 
-    print("{} ifgs are discarded due to weak links...".format(len(weak_links)))
     # export weak links
     with open(weak_ifgfile, 'w') as f:
         for i in weak_links:
@@ -385,16 +391,11 @@ def plot_networks():
     #%% Plot network
     bperp = get_bperp_from_ifgdates(ifgdates)
 
-    pngfile = os.path.join(netdir, 'network120_all.png')
-    plot_lib.plot_network(ifgdates, bperp, [], pngfile)
-
-    # pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
-    # plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
+    pngfile = os.path.join(netdir, 'network120_red_no_ref.png')
+    plot_lib.plot_network(ifgdates, bperp, noref_ifg, pngfile, plot_bad=True, label_name='NaN at Ref')
 
     bperp = get_bperp_from_ifgdates(retained_ifgs)
     pngfile = os.path.join(netdir, 'network120_remain_strong_cuts.png')
-    # n_gap = plot_lib.plot_network(retained_ifgs, bperp, weak_links, pngfile, plot_bad=True, label_name='Weak Links')
-    # print("There are {} gap(s) in the remaining network of {} strong-link ifgs".format(n_gap, len(strong_links)))
     plot_lib.plot_strong_weak_cuts_network(retained_ifgs, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
 
 
@@ -404,19 +405,18 @@ def main():
     start()
     init_args()
     set_input_output()
-    # read_length_width()
-    # decide_reference_window_size()
+    read_length_width()
+    decide_reference_window_size()
     get_ifgdates()
-    #
-    # calc_block_sum_of_unw_coh_component_size()
-    # calc_height_std()
-    # clip_normalise_combine_indices()
-    #
-    # closest_to_ref_center()
-    # plot_ref_proxies()
-    # save_reference_to_file()
-    # retained_ifgs = discard_ifg_with_all_nans_at_ref()
-    retained_ifgs = ifgdates
+
+    calc_block_sum_of_unw_coh_component_size()
+    calc_height_std()
+    clip_normalise_combine_indices()
+
+    closest_to_ref_center()
+    plot_ref_proxies()
+    save_reference_to_file()
+    retained_ifgs = discard_ifg_with_all_nans_at_ref()
     component_network_analysis(retained_ifgs)
     plot_networks()
     finish()

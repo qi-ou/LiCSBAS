@@ -117,6 +117,7 @@ def set_input_output():
     infodir = os.path.join(tsadir, 'info')  # to read 11bad_ifg.txt, 12bad_ifg.txt
     netdir = os.path.join(tsadir, 'network')
 
+
 def get_ifgdates():
     global ifgdates
     # bad_ifg11file = os.path.join(infodir, '11bad_ifg.txt')
@@ -135,7 +136,7 @@ def get_ifgdates():
     # ifgdates = list(set(ifgdates_all)-set(bad_ifg_all))
     # ifgdates.sort()
 
-    strong_ifgfile = os.path.join(infodir, '120strong_links.txt')
+    strong_ifgfile = os.path.join(infodir, '120strong_connected_links.txt')
     ifgdates = io_lib.read_ifg_list(strong_ifgfile)
     ifgdates.sort()
 
@@ -177,9 +178,9 @@ def one_correction():
         run_133(current_iter)
     else:
         run_132(current_iter_unwdir, next_iter_unwdir, current_iter)
-        run_130(next_iter_unwdir, next_iter)
-        run_131(next_iter)
-        run_133(next_iter)
+        # run_130(next_iter_unwdir, next_iter)
+        # run_131(next_iter)
+        # run_133(next_iter)
 
         # run_131(next_iter)
         # run_masking(next_iter_unwdir, masking_unwdir, next_iter)
@@ -221,7 +222,7 @@ def run_131(current_iter):
 
 
 def run_132(before_dir, after_dir, current_iter):
-    os.system('LiCSBAS132_3D_correction.py -c {} -d {} -o {} -t {} --suffix {} --move_weak'.format(
+    os.system('LiCSBAS132_3D_correction.py -c {} -d {} -o {} -t {} --suffix {} -s 0.2'.format(
         ccdir, before_dir, after_dir, args.ts_dir, int(current_iter)))
 
 

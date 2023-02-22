@@ -211,15 +211,15 @@ def read_ifg_list(ifg_listfile):
     ifgdates = []
     f = open(ifg_listfile)
     line = f.readline()
+
     while line:
-        ifgd = line.split()[0]
-        if ifgd == "#":
+        if line[0] == "2":
+            ifgd = line.split()[0]
+            ifgdates.append(str(ifgd))
             line = f.readline()
-            continue # Comment
         else:
-            ifgdates.append(ifgd)
             line = f.readline()
-    f.close()
+            continue
 
     return ifgdates
 

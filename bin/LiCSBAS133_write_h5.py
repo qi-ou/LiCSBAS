@@ -87,6 +87,7 @@ def init_args():
     parser.add_argument('-f', dest='frame_dir', default="./", help="directory of LiCSBAS output")
     parser.add_argument('-c', dest='comp_cc_dir', default="GEOCml10GACOS", help="folder containing connected components and coherence files")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
+    parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs, if not given, all ifgs in -c are read")
     parser.add_argument('--suffix', default="", type=str, help="suffix of the final iteration")
     args = parser.parse_args()
 
@@ -287,7 +288,11 @@ def main():
     # directory settings
     set_input_output()
     read_length_width()
-    ifgdates = tools_lib.get_ifgdates(ifgdir)
+    if args.ifg_list:
+        ifgdates = io_lib.read_ifg_list(args.ifg_list)
+    else:
+        ifgdates = tools_lib.get_ifgdates(ifgdir)
+
 
     # copy everything from last iter to final
     shutil.copyfile(last_cumh5file, cumh5file)
