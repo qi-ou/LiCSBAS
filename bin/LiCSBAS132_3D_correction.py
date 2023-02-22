@@ -784,7 +784,6 @@ def correcting_by_integer(reslist):
         rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - res_mask) ** 2))
 
         # plotting
-        int_list.append(pair)
         png_path = os.path.join(integer_png_dir, '{}.png'.format(pair))
         plot_correction_by_integer(pair, unw, unw_corrected, unw_masked, res_mask, res_num_2pi, res_integer, res_rms,
                                    rms_res_integer_corrected, rms_res_mask_corrected, png_path)
