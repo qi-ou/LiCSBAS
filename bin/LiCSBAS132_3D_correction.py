@@ -678,6 +678,14 @@ def mode_correction():
     else:
         correcting_by_mode(res_list)
 
+def integer_correction():
+    # parallel processing
+    if n_para > 1 and len(res_list) > 20:
+        pool = multi.Pool(processes=n_para)
+        pool.map(correcting_by_integer, even_split(res_list, n_para))
+    else:
+        correcting_by_integer(res_list)
+
 
 def calc_component_mode(con, res_integer, res_num_2pi):
     # calculate component modes
@@ -722,6 +730,44 @@ def correcting_by_mode(reslist):
         # save the corrected unw
         unw_corrected.flatten().tofile(os.path.join(correct_pair_dir, pair + '.unw'))
         del con, unw, unw_corrected, res_num_2pi, res_integer, res_rms
+
+def correcting_by_integer(reslist):
+    for i in reslist:
+        pair = os.path.basename(i).split('.')[0][-17:]
+        print(pair)
+        res_num_2pi, res_rms = load_res(i, length, width)
+        res_integer = np.round(res_num_2pi)
+        rms_res_integer_corrected = np.sqrt(np.nanmean((res_num_2pi - res_integer) ** 2))
+
+        # calc component mode
+        unwfile = os.path.join(unwdir, pair, pair + '.unw')
+        unw = np.fromfile(unwfile, dtype=np.float32).reshape((length, width))
+
+        # correcting by component mode
+        unw_corrected = unw - res_integer * 2 * np.pi
+
+        # turn uncertain correction into masking
+        mask1 = np.logical_and(abs(res_num_2pi) > 0.2, abs(res_num_2pi) < 0.8)
+        mask2 = np.logical_and(abs(res_num_2pi) > 1.2, abs(res_num_2pi) < 1.8)
+        mask = np.logical_or(mask1, mask2)
+        res_mask = copy.copy(res_integer)
+        res_mask[mask] = np.nan
+        unw_masked = unw - res_mask * 2 * np.pi
+        rms_res_mask_corrected = np.sqrt(np.nanmean((res_num_2pi - res_mask) ** 2))
+
+        # plotting
+        int_list.append(pair)
+        png_path = os.path.join(integer_png_dir, '{}.png'.format(pair))
+        plot_correction_by_integer(pair, unw, unw_corrected, unw_masked, res_mask, res_num_2pi, res_integer, res_rms,
+                                   rms_res_integer_corrected, rms_res_mask_corrected, png_path)
+
+        # define output dir
+        correct_pair_dir = os.path.join(correct_dir, pair)
+        Path(correct_pair_dir).mkdir(parents=True, exist_ok=True)
+
+        # save the corrected unw
+        unw_masked.flatten().tofile(os.path.join(correct_pair_dir, pair + '.unw'))
+        del mask1, mask2, mask, res_mask, unw_masked, rms_res_mask_corrected
 
 
 def best_network(all_ifgs, all_resids):
@@ -777,6 +823,8 @@ def main():
         plot_network_with_unw_perc(perc_list)
     elif args.correction_by_mode:
         mode_correction()
+    elif args.correction_by_integer:
+        integer_correction()
     elif args.best_network:
         all_ifgs, all_resids = io_lib.read_residual_file(resid_threshold_file)
         best_network(all_ifgs, all_resids)
