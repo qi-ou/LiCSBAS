@@ -378,7 +378,7 @@ def component_network_analysis(retained_ifgs):
 def get_bperp_from_ifgdates(ifgdates):
     ## Read bperp data or dummy
     imdates = tools_lib.ifgdates2imdates(ifgdates)
-    bperp_file = os.path.join(ifgdir, 'baselines')
+    bperp_file = os.path.join(ccdir, 'baselines')
     if os.path.exists(bperp_file):
         bperp = io_lib.read_bperp_file(bperp_file, imdates)
     else: #dummy
