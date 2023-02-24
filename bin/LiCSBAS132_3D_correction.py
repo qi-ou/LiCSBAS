@@ -223,8 +223,14 @@ def get_para():
     if len(res_list) == 0:
         sys.exit('No ifgs for correcting...\nCheck if there are *res files in the directory {}'.format(resdir))
 
-    if not args.mask_by_residual:
-        # read threshold value
+    if args.mask_by_residual:
+        pass
+    elif args.correction_by_integer:
+        pass
+    elif args.correction_by_mode:
+        pass
+    else:
+        # read threshold value for automatic decision
         resid_threshold_file = os.path.join(infodir, '131resid_2pi{}.txt'.format(args.suffix))
         if args.correction_thresh:
             correction_thresh = args.correction_thresh
