@@ -200,8 +200,8 @@ def main(argv=None):
     if not os.path.exists(inparmfile):  ## for old LiCSBAS13 <v1.2
         inparmfile = os.path.join(tsadir, 'info', 'parameters.txt')
     outparmfile = os.path.join(tsadir, 'info', '15parameters.txt')
-    maskts_png = os.path.join(tsadir,'mask_ts.png')
-    maskts2_png = os.path.join(tsadir,'mask_ts_masked.png')
+    maskts_png = os.path.join(tsadir, 'results', 'mask_ts.png')
+    maskts2_png = os.path.join(tsadir, 'results', 'mask_ts_masked.png')
 
     names = ['coh_avg', 'n_unw', 'vstd', 'maxTlen', 'n_gap', 'stc', 'n_ifg_noloop', 'n_loop_err', 'resid_rms'] ## noise indices
     gt_lt = ['lt', 'lt', 'gt', 'lt', 'gt', 'gt', 'gt', 'gt', 'gt'] ## > or <
