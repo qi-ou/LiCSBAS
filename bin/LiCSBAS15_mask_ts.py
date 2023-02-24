@@ -197,7 +197,10 @@ def main(argv=None):
 
     #%% Directory and file setting and get info
     tsadir = os.path.abspath(tsadir)
-    resultsdir = os.path.join(tsadir,'results'+suffix)
+    if suffix is "":
+        resultsdir = os.path.join(tsadir, 'results')
+    else:
+        resultsdir = os.path.join(tsadir, '130results' + suffix)
 
     inparmfile = os.path.join(tsadir, 'info', '13parameters.txt')
     if not os.path.exists(inparmfile):  ## for old LiCSBAS13 <v1.2

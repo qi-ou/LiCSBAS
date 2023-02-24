@@ -130,7 +130,13 @@ def main(argv=None):
 
     #%% Directory settings
     tsadir = os.path.abspath(tsadir)
-    resultsdir = os.path.join(tsadir,'results'+suffix)
+    if suffix is "":
+        resultsdir = os.path.join(tsadir,'results')
+    else:
+        resultsdir = os.path.join(tsadir,'130results'+suffix)
+
+
+
     print(resultsdir)
 
     #%% Read data information
