@@ -197,7 +197,7 @@ def main(argv=None):
 
     #%% Directory and file setting and get info
     tsadir = os.path.abspath(tsadir)
-    if suffix is "":
+    if suffix == "":
         resultsdir = os.path.join(tsadir, 'results')
     else:
         resultsdir = os.path.join(tsadir, '130results' + suffix)
