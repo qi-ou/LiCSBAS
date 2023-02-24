@@ -84,12 +84,13 @@ def main(argv=None):
     ransac = False
     cmap_noise_r = 'viridis_r'
     cumfile = False
+    suffix = ""
     
     #%% Read options
     try:
         try:
             opts, args = getopt.getopt(argv[1:], "ht:i:",
-                                       ["help", "mem_size=", "gpu", "ransac"])
+                                       ["help", "mem_size=", "gpu", "ransac", "suffix"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -106,6 +107,8 @@ def main(argv=None):
                 gpu = True
             elif o == '--ransac':
                 ransac = True
+            elif o == '--suffix':
+                suffix = a
 
 
         if not tsadir:
@@ -125,7 +128,7 @@ def main(argv=None):
 
     #%% Directory settings
     tsadir = os.path.abspath(tsadir)
-    resultsdir = os.path.join(tsadir,'results')
+    resultsdir = os.path.join(tsadir,'results'+suffix)
 
 
     #%% Read data information
