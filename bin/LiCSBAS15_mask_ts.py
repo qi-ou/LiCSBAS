@@ -134,7 +134,8 @@ def main(argv=None):
     vmax = []
     keep_isolated = False
     auto_adjust = True
-    
+    suffix = ""
+
     cmap_vel = SCM.roma.reversed()
     cmap_noise = 'viridis'
     cmap_noise_r = 'viridis_r'
@@ -142,7 +143,7 @@ def main(argv=None):
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "ht:c:u:v:g:i:l:r:T:s:", ["version", "help", "vmin=", "vmax=", "keep_isolated", "noautoadjust"])
+            opts, args = getopt.getopt(argv[1:], "ht:c:u:v:g:i:l:r:T:s:", ["version", "help", "vmin=", "vmax=", "keep_isolated", "noautoadjust", "suffix"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -177,6 +178,8 @@ def main(argv=None):
                 keep_isolated = True
             elif o == '--noautoadjust':
                 auto_adjust = False
+            elif o == '--suffix':
+                suffix = a
 
         if not tsadir:
             raise Usage('No tsa directory given, -t is not optional!')
