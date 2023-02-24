@@ -90,6 +90,8 @@ def init_args():
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs, if not given, all ifgs in -c are read")
     parser.add_argument('--suffix', default="", type=str, help="suffix of the final iteration")
+    parser.add_argument('--stay', default=False, action='store_true', help="don't copy to results, save everything in results$suffix")
+
     args = parser.parse_args()
 
 
@@ -129,7 +131,11 @@ def set_input_output():
     last_cumh5file = os.path.join(tsadir, '130cum{}.h5'.format(args.suffix))
 
     # define output directory and file
-    resultsdir = os.path.join(tsadir, 'results')
+    if args.stay:
+        resultsdir = last_result_dir
+    else:
+        resultsdir = os.path.join(tsadir, 'results')
+
     cumh5file = os.path.join(tsadir, 'cum.h5')
 
 
@@ -297,10 +303,10 @@ def main():
     else:
         ifgdates = tools_lib.get_ifgdates(ifgdir)
 
-
-    # copy everything from last iter to final
-    shutil.copyfile(last_cumh5file, cumh5file)
-    shutil.copytree(last_result_dir, resultsdir, dirs_exist_ok=True)
+    if not args.stay:
+        # copy everything from last iter to final
+        shutil.copyfile(last_cumh5file, cumh5file)
+        shutil.copytree(last_result_dir, resultsdir, dirs_exist_ok=True)
 
     # calc quality stats based on the final corrected unw
     n_unw = calc_n_unw()
