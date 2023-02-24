@@ -85,6 +85,7 @@ def init_args():
     global args
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest='frame_dir', default="./", help="directory of LiCSBAS output")
+    parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input to be corrected")
     parser.add_argument('-c', dest='comp_cc_dir', default="GEOCml10GACOS", help="folder containing connected components and coherence files")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-l', dest='ifg_list', default=None, type=str, help="text file containing a list of ifgs, if not given, all ifgs in -c are read")
@@ -118,7 +119,8 @@ def set_input_output():
 
     # define input directories and file
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
-    ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir+args.suffix))
+    ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
+    # ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir+args.suffix))
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     infodir = os.path.join(tsadir, 'info')
     last_result_dir = os.path.join(tsadir, '130results{}'.format(args.suffix))
