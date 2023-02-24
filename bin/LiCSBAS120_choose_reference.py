@@ -71,7 +71,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest="frame_dir", default="./", help="directory of LiCSBAS output of a particular frame")
     parser.add_argument('-c', dest='cc_dir', default="GEOCml10GACOS", help="folder containing cc input")
-    parser.add_argument('-g', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input")
+    parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-w', dest='win', default="5", type=float, help="Window size in km")
     parser.add_argument('-p', dest='percentile', default=90, type=float, choices=range(0, 100), metavar="[0-100]", help="proxy percentile above which the window nearest to desired center will be chosen as the reference window")
