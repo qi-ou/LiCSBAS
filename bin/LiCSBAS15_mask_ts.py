@@ -143,7 +143,7 @@ def main(argv=None):
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "ht:c:u:v:g:i:l:r:T:s:", ["version", "help", "vmin=", "vmax=", "keep_isolated", "noautoadjust", "suffix"])
+            opts, args = getopt.getopt(argv[1:], "ht:c:u:v:g:i:l:r:T:s:", ["version", "help", "vmin=", "vmax=", "keep_isolated", "noautoadjust", "suffix="])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:

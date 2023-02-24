@@ -91,7 +91,7 @@ def main(argv=None):
     try:
         try:
             opts, args = getopt.getopt(argv[1:], "ht:i:",
-                                       ["help", "mem_size=", "gpu", "ransac", "suffix"])
+                                       ["help", "mem_size=", "gpu", "ransac", "suffix="])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
