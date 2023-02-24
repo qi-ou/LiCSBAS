@@ -72,7 +72,8 @@ def main(argv=None):
 
     start = time.time()
     #ver=1.2; date=20210309; author="Y. Morishita"
-    ver=1.3; date=20221115; author="M. Lazecky"
+    # ver=1.3; date=20221115; author="M. Lazecky"
+    ver=1.3; date=20230224; author="Q. Ou"
     print("\n{} ver{} {} {}".format(os.path.basename(argv[0]), ver, date, author), flush=True)
     print("{} {}".format(os.path.basename(argv[0]), ' '.join(argv[1:])), flush=True)
 
@@ -109,6 +110,7 @@ def main(argv=None):
                 ransac = True
             elif o == '--suffix':
                 suffix = a
+                print(suffix)
 
 
         if not tsadir:
@@ -129,7 +131,7 @@ def main(argv=None):
     #%% Directory settings
     tsadir = os.path.abspath(tsadir)
     resultsdir = os.path.join(tsadir,'results'+suffix)
-
+    print(resultsdir)
 
     #%% Read data information
     if not cumfile:
