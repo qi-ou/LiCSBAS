@@ -142,6 +142,8 @@ def main(argv=None):
     #%% Read data information
     if not cumfile:
         cumfile=os.path.join(tsadir,'cum.h5')
+        if not suffix == "":
+            cumfile = os.path.join(tsadir, '130cum{}.h5'.format(suffix))
         if ransac:
             print('WARNING, using unmasked result (cum.h5) with RANSAC iterations - might take long (not parallel yet)')
     else:
