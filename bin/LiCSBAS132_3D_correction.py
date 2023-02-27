@@ -102,7 +102,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest='frame_dir', default="./", help="directory of LiCSBAS output of a particular frame")
     parser.add_argument('-c', dest='comp_cc_dir', default="GEOCml10GACOS", help="folder containing connected components and cc files")
-    parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input to be corrected")
+    # parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input to be corrected")
     parser.add_argument('-o', dest='out_dir', default="GEOCml10GACOS_corrected", help="folder for corrected/masked unw")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series and residuals")
     parser.add_argument('-s', dest='correction_thresh', type=float, help="RMS residual per ifg (in 2pi) for correction, override info/131resid_2pi.txt")
@@ -145,7 +145,10 @@ def set_input_output():
 
     # define input directories
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
-    unwdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
+    if args.suffix == 1:
+        unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .unw
+    else:
+        unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir + args.suffix))  # to read .unw
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     resdir = os.path.join(tsadir, '130resid{}'.format(args.suffix))
     infodir = os.path.join(tsadir, 'info')

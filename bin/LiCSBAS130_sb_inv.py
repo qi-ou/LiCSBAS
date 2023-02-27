@@ -22,7 +22,7 @@ Inputs in GEOCml*/ (--comp_cc_dir):
  - baselines (may be dummy)
 [- [ENU].geo]
 
-Inputs in GEOCml*/ (--unw_dir):
+Inputs in GEOCml*/ (--cc_dir+suffix):
  - yyyymmdd_yyyymmdd/
    - yyyymmdd_yyyymmdd.unw
 
@@ -150,7 +150,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest='frame_dir', default="./", help="directory of LiCSBAS output of a particular frame")
     parser.add_argument('-c', dest='cc_dir', default="GEOCml10GACOS", help="folder containing connected cc files")
-    parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing unw input to be corrected")
+    # parser.add_argument('-d', dest='unw_dir', help="folder containing unw input to be corrected")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-m', dest='memory_size', default=2000, type=float, help="Max memory size for each patch in MB")
     parser.add_argument('-g', dest='gamma', default=0.0001, type=float, help="Gamma value for NSBAS inversion")
@@ -205,7 +205,10 @@ def main():
 
     # define input directories
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .cc
-    ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))  # to read .unw
+    if args.suffix == 1:
+        ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .unw
+    else:
+        ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir+args.suffix))  # to read .unw
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))   # to read 120.ref, to write cum.h5
     infodir = os.path.join(tsadir, 'info')  # to read 120.ref
     reffile = os.path.join(infodir, '120ref.txt')

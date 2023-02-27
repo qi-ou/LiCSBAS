@@ -58,7 +58,7 @@ def init_args():
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-f', dest='frame_dir', default="./", help="directory of LiCSBAS output of a particular frame")
-    parser.add_argument('-d', dest='unw_dir', default="GEOCml10GACOS", help="folder containing slc.mli.par")
+    parser.add_argument('-c', dest='cc_dir', default="GEOCml10GACOS", help="folder containing slc.mli.par")
     parser.add_argument('-t', dest='ts_dir', default="TS_GEOCml10GACOS", help="folder containing time series")
     parser.add_argument('-r', dest='thresh', type=float, help="user specified threshold value, otherwise auto-detected")
     parser.add_argument('-p', dest='percentile', type=float, help="optional percentile RMS for thresholding")
@@ -91,7 +91,7 @@ def set_input_output():
     global unwdir, tsadir, resdir, infodir, hist_png, restxtfile
 
     # define input directories
-    unwdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
+    unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir+args.suffix))
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     resdir = os.path.join(tsadir, '130resid'+args.suffix)
 
