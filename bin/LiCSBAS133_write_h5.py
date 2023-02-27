@@ -117,7 +117,7 @@ def finish():
 
 
 def set_input_output():
-    global ccdir, ifgdir, tsadir, infodir, last_result_dir, resultsdir, last_cumh5file, cumh5file
+    global ccdir, ifgdir, tsadir, infodir, last_result_dir, resultsdir, last_cumh5file, cumh5file, ifgdates
 
     # define input directories and file
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
@@ -125,6 +125,12 @@ def set_input_output():
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.unw_dir))
     else:
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir+args.suffix))
+
+    if args.ifg_list:
+        ifgdates = io_lib.read_ifg_list(args.ifg_list)
+    else:
+        ifgdates = tools_lib.get_ifgdates(ifgdir)
+
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     infodir = os.path.join(tsadir, 'info')
     last_result_dir = os.path.join(tsadir, '130results{}'.format(args.suffix))
@@ -133,10 +139,13 @@ def set_input_output():
     # define output directory and file
     if args.stay:
         resultsdir = last_result_dir
+        cumh5file = last_cumh5file
     else:
         resultsdir = os.path.join(tsadir, 'results')
-
-    cumh5file = os.path.join(tsadir, 'cum.h5')
+        cumh5file = os.path.join(tsadir, 'cum.h5')
+        # copy everything from last iter to final
+        shutil.copyfile(last_cumh5file, cumh5file)
+        shutil.copytree(last_result_dir, resultsdir, dirs_exist_ok=True)
 
 
 def read_length_width():
@@ -298,15 +307,6 @@ def main():
     # directory settings
     set_input_output()
     read_length_width()
-    if args.ifg_list:
-        ifgdates = io_lib.read_ifg_list(args.ifg_list)
-    else:
-        ifgdates = tools_lib.get_ifgdates(ifgdir)
-
-    if not args.stay:
-        # copy everything from last iter to final
-        shutil.copyfile(last_cumh5file, cumh5file)
-        shutil.copytree(last_result_dir, resultsdir, dirs_exist_ok=True)
 
     # calc quality stats based on the final corrected unw
     n_unw = calc_n_unw()
