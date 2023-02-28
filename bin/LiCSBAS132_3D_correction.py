@@ -849,7 +849,7 @@ def best_network(all_ifgs, all_resids):
     best_network_ifg_file = os.path.join(infodir, '132best_network_ifg{}_{:.2f}.txt'.format(args.suffix, target_thresh))
     if os.path.exists(best_network_ifg_file): os.remove(best_network_ifg_file)
     with open(best_network_ifg_file, 'w') as f:
-        for i in strong_links:
+        for i in ifgs:
             print('{}'.format(i), file=f)
 
 
