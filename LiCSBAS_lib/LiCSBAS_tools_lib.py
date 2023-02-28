@@ -542,7 +542,7 @@ def calc_temporal_baseline(ifg_list):
         dt_list.append(dt_ifg)
     return dt_list
 
-def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cuts=True, remove_node_cuts=True):
+def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cuts=True, remove_node_cuts=True, skip_node_cuts=False):
     """return a list of strong ifgs and a list of weak ifgs"""
     primarylist = []
     secondarylist = []
@@ -612,23 +612,24 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
             #
             # output a record of the node_cuts
             node_cuts = []
-            print("skipping node cut searching")
-            # print(list(nx.all_node_cuts(G)))
-            # for i in list(nx.all_node_cuts(G)):
-            #     print(i)
-            #     for j in list(i):
-            #         print(j)
-            #         node_cuts.append(j)
-            #         print(node_cuts)
-            # print("{} node cuts".format(len(node_cuts)))
-            if remove_node_cuts:
-                # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
-                while nx.node_connectivity(G) == 1:
-                    # iteratively remove the first node cut from all_node_cuts and see if the remaining largest component has node cuts
-                    G.remove_nodes_from(list(nx.all_node_cuts(G))[0])
-                    largest_cc = max(nx.connected_components(G), key=len)
-                    Gs = nx.subgraph(G, largest_cc)
-                    G = nx.Graph(Gs)
+            # print("skipping node cut searching")
+            if not skip_node_cuts:
+                print(list(nx.all_node_cuts(G)))
+                for i in list(nx.all_node_cuts(G)):
+                    print(i)
+                    for j in list(i):
+                        print(j)
+                        node_cuts.append(j)
+                        print(node_cuts)
+                print("{} node cuts".format(len(node_cuts)))
+                if remove_node_cuts:
+                    # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
+                    while nx.node_connectivity(G) == 1:
+                        # iteratively remove the first node cut from all_node_cuts and see if the remaining largest component has node cuts
+                        G.remove_nodes_from(list(nx.all_node_cuts(G))[0])
+                        largest_cc = max(nx.connected_components(G), key=len)
+                        Gs = nx.subgraph(G, largest_cc)
+                        G = nx.Graph(Gs)
 
         # compute other stats about the largest connected components
         degrees = [len(list(G.neighbors(n))) for n in G.nodes()]

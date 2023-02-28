@@ -78,12 +78,13 @@ def main(argv=None):
     thresh = False
     remove_edge_cuts = True
     remove_node_cuts = True
+    skip_node_cuts = False
 
 
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:en", ["help", "not_plot_bad", "not_strict"])
+            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:en", ["help", "not_plot_bad", "not_strict", "skip_node_cuts"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -112,6 +113,8 @@ def main(argv=None):
                 remove_edge_cuts = False
             elif o == '-n':
                 remove_node_cuts = False
+            elif o == '--skip_node_cuts':
+                skip_node_cuts = True
 
 
         if not ifgfile:
@@ -181,7 +184,7 @@ def main(argv=None):
 
     if strong_connected:
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(
-            ifgdates, "{}_stats.txt".format(basename), remove_edge_cuts=remove_edge_cuts, remove_node_cuts=remove_node_cuts)
+            ifgdates, "{}_stats.txt".format(basename), remove_edge_cuts=remove_edge_cuts, remove_node_cuts=remove_node_cuts, skip_node_cuts=skip_node_cuts)
         pngfile = "{}{}_strongly_connected_network.png".format(basename, suffix)
         plot_lib.plot_strong_weak_cuts_network(ifgdates, bperp, weak_links, edge_cuts, node_cuts, pngfile, plot_weak=True)
         # export weak links
