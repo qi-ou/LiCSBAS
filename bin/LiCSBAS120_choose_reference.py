@@ -341,6 +341,12 @@ def discard_ifg_with_all_nans_at_ref():
             print('{}'.format(i), file=f)
             print('{}'.format(i))
     retained_ifgs = list(set(ifgdates)-set(noref_ifg))
+
+    # export weak links
+    with open(os.path.join(infodir, '120retained_links.txt'), 'w') as f:
+        for i in retained_ifgs:
+            print('{}'.format(i), file=f)
+
     return retained_ifgs
 
 
