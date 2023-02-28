@@ -145,7 +145,7 @@ def set_input_output():
 
     # define input directories
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
-    if args.suffix == 1:
+    if args.suffix == "1":
         unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .unw
     else:
         unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir + args.suffix))  # to read .unw

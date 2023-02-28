@@ -205,7 +205,7 @@ def main():
 
     # define input directories
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .cc
-    if args.suffix == 1:
+    if args.suffix == "1":
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))  # to read .unw
     else:
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir+args.suffix))  # to read .unw

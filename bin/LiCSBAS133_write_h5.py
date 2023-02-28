@@ -121,7 +121,7 @@ def set_input_output():
 
     # define input directories and file
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
-    if args.suffix == 1:
+    if args.suffix == "1":
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
     else:
         ifgdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir+args.suffix))
