@@ -587,12 +587,16 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
         # if not connected, extract the largest connected component based on number of epochs involved
         if not nx.is_connected(G):
             largest_cc = max(nx.connected_components(G), key=len)
+            print("Not connected, hence largest_cc extracted...")
             Gs = nx.subgraph(G, largest_cc)
             G = nx.Graph(Gs)
 
         # if the largest component network is not well-connected, highlight the edge cuts and node cuts
         if nx.edge_connectivity(G) == 1:
+            print("Edge connectivity is {}".format(nx.edge_connectivity(G)))
+
             edge_cuts = edges_to_ifgdates(list(nx.bridges(G)))
+            print("{} edge cuts".format(len(edge_cuts)))
             if remove_edge_cuts:
                 # remove edge cuts and extract the largest connected component
                 G.remove_edges_from(nx.bridges(G))
@@ -601,11 +605,14 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
                 G = nx.Graph(Gs)
 
         if nx.node_connectivity(G) == 1:
+            print("Node connectivity is {}".format(nx.node_connectivity(G)))
+
             # output a record of the node_cuts
             node_cuts = []
             for i in list(nx.all_node_cuts(G)):
                 for j in list(i):
                     node_cuts.append(j)
+            print("{} node cuts".format(len(node_cuts)))
             if remove_node_cuts:
                 # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
                 while nx.node_connectivity(G) == 1:
