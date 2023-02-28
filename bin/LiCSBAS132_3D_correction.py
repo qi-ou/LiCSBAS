@@ -541,7 +541,12 @@ def plot_networks():
     else:
         # strong_links, weak_links = tools_lib.separate_strong_and_weak_links(retained_ifgs)
         component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
+        largest_component_file = os.path.join(infodir, 'network132_largest_component_links{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
         strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(retained_ifgs, component_stats_file)
+        if os.path.exists(largest_component_file): os.remove(largest_component_file)
+        with open(largest_component_file, 'w') as f:
+            for i in strong_links:
+                print('{}'.format(i), file=f)
 
         if len(strong_links) == 0:
             n_gap = 1
