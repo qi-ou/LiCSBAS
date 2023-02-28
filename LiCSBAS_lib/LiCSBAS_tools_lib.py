@@ -590,6 +590,9 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
             print("Not connected, hence largest_cc extracted...")
             Gs = nx.subgraph(G, largest_cc)
             G = nx.Graph(Gs)
+            nx.draw(G, with_labels=True)
+            plt.savefig('labels.png')
+
 
         # if the largest component network is not well-connected, highlight the edge cuts and node cuts
         if nx.edge_connectivity(G) == 1:
