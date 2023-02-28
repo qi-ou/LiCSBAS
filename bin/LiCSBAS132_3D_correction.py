@@ -814,14 +814,14 @@ def best_network(all_ifgs, all_resids):
     while n_gap > 0:  # loosen correction and target thresholds until the network has no gap even after removing weak links
         ifgs = [i for i, r in zip(all_ifgs, all_resids) if r < target_thresh]
         # strong_links, weak_links = tools_lib.separate_strong_and_weak_links(ifgs)
-        component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
-        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgs, component_stats_file)
+        # component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
+        # strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgs, component_stats_file)
 
         print("target_thresh = {}".format(target_thresh))
-        print("{} ifgs are well-connected".format(len(strong_links)))
-        print("{} ifgs are weak links".format(len(weak_links)))
+        # print("{} ifgs are well-connected".format(len(strong_links)))
+        # print("{} ifgs are weak links".format(len(weak_links)))
         ### Identify gaps
-        G = inv_lib.make_sb_matrix(strong_links)
+        G = inv_lib.make_sb_matrix(ifgs)
         ixs_inc_gap = np.where(G.sum(axis=0) == 0)[0]
         n_gap = len(ixs_inc_gap)
         print("n_gap={}".format(int(n_gap)))
@@ -838,10 +838,12 @@ def best_network(all_ifgs, all_resids):
         n_im = len(imdates)
         bperp = np.random.random(n_im).tolist()
 
-    pngfile = os.path.join(netdir, 'network132_best_network_all{}_{:.2f}.png'.format(args.suffix, target_thresh))
-    plot_lib.plot_corrected_network(ifgs, bperp, weak_links, pngfile, plot_corrected=True, label_name='Weak Links')
+    # pngfile = os.path.join(netdir, 'network132_best_network_all{}_{:.2f}.png'.format(args.suffix, target_thresh))
+    # plot_lib.plot_corrected_network(ifgs, bperp, weak_links, pngfile, plot_corrected=True, label_name='Weak Links')
+    # pngfile = os.path.join(netdir, 'network132_best_network_strong{}_{:.2f}.png'.format(args.suffix, target_thresh))
+    # plot_lib.plot_network(ifgs, bperp, weak_links, pngfile, plot_bad=False)
     pngfile = os.path.join(netdir, 'network132_best_network_strong{}_{:.2f}.png'.format(args.suffix, target_thresh))
-    plot_lib.plot_network(ifgs, bperp, weak_links, pngfile, plot_bad=False)
+    plot_lib.plot_network(ifgs, bperp, [], pngfile, plot_bad=False)
 
     #%% save ifg lists to text files.
     best_network_ifg_file = os.path.join(infodir, '132best_network_ifg{}_{:.2f}.txt'.format(args.suffix, target_thresh))
