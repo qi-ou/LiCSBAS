@@ -91,7 +91,7 @@ def set_input_output():
     global unwdir, tsadir, resdir, infodir, hist_png, restxtfile
 
     # define input directories
-    unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir+args.suffix))
+    unwdir = os.path.abspath(os.path.join(args.frame_dir, args.cc_dir))
     tsadir = os.path.abspath(os.path.join(args.frame_dir, args.ts_dir))
     resdir = os.path.join(tsadir, '130resid'+args.suffix)
 
