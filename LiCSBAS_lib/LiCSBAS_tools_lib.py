@@ -609,7 +609,7 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
 
             # output a record of the node_cuts
             node_cuts = []
-            print(list(nx.all_node_cuts(G))
+            print(list(nx.all_node_cuts(G)))
             for i in list(nx.all_node_cuts(G)):
                 print(i)
                 for j in list(i):
