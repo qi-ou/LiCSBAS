@@ -813,7 +813,10 @@ def best_network(all_ifgs, all_resids):
 
     while n_gap > 0:  # loosen correction and target thresholds until the network has no gap even after removing weak links
         ifgs = [i for i, r in zip(all_ifgs, all_resids) if r < target_thresh]
-        strong_links, weak_links = tools_lib.separate_strong_and_weak_links(ifgs)
+        # strong_links, weak_links = tools_lib.separate_strong_and_weak_links(ifgs)
+        component_stats_file = os.path.join(infodir, 'network132_component_stats{}_{:.2f}_{:.2f}.txt'.format(args.suffix, correction_thresh, target_thresh))
+        strong_links, weak_links, edge_cuts, node_cuts = tools_lib.separate_strong_and_weak_links(ifgs, component_stats_file)
+
         print("target_thresh = {}".format(target_thresh))
         print("{} ifgs are well-connected".format(len(strong_links)))
         print("{} ifgs are weak links".format(len(weak_links)))
