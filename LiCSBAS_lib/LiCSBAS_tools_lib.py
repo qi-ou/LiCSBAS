@@ -610,8 +610,11 @@ def separate_strong_and_weak_links(ifg_list, component_statsfile, remove_edge_cu
             # output a record of the node_cuts
             node_cuts = []
             for i in list(nx.all_node_cuts(G)):
+                print(i)
                 for j in list(i):
+                    print(j)
                     node_cuts.append(j)
+                    print(node_cuts)
             print("{} node cuts".format(len(node_cuts)))
             if remove_node_cuts:
                 # remove node cuts, which will waste edges connected to the node cuts. The remaining should be robust
