@@ -274,6 +274,7 @@ def main(argv=None):
         out_dir1 = os.path.join(out_dir, ifgd)
         unwfile_c = os.path.join(out_dir1, ifgd+'.unw')
         ccfile_c = os.path.join(out_dir1, ifgd+'.cc')
+        compfile_c = os.path.join(out_dir1, ifgd+'.conncomp')
         if not (os.path.exists(unwfile_c) and os.path.exists(ccfile_c)):
             ifgdates2.append(ifgd)
 
@@ -311,6 +312,7 @@ def clip_wrapper(ifgix):
     ifgd = ifgdates2[ifgix]
     unwfile = os.path.join(in_dir, ifgd, ifgd+'.unw')
     ccfile = os.path.join(in_dir, ifgd, ifgd+'.cc')
+    compfile = os.path.join(in_dir, ifgd, ifgd + '.conncomp')
     
     unw = io_lib.read_img(unwfile, length, width)
     unw[unw==0] = np.nan
@@ -322,10 +324,12 @@ def clip_wrapper(ifgix):
         print("ERROR: unkown file format for {}".format(ccfile), file=sys.stderr)
         return
     coh = io_lib.read_img(ccfile, length, width, dtype=ccformat)
+    comp = io_lib.read_img(compfile, length, width, dtype=ccformat)
 
     ### Clip
     unw = unw[y1:y2, x1:x2]
     coh = coh[y1:y2, x1:x2]
+    comp = comp[y1:y2, x1:x2]
 
     ### Output
     out_dir1 = os.path.join(out_dir, ifgd)
@@ -333,6 +337,7 @@ def clip_wrapper(ifgix):
     
     unw.tofile(os.path.join(out_dir1, ifgd+'.unw'))
     coh.tofile(os.path.join(out_dir1, ifgd+'.cc'))
+    comp.tofile(os.path.join(out_dir1, ifgd + '.conncomp'))
 
     ## Output png for corrected unw
     pngfile = os.path.join(out_dir1, ifgd+'.unw.png')
