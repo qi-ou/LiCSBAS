@@ -85,6 +85,7 @@ def init_args():
     parser.add_argument('--keep_edge_cuts', default=False, action='store_true', help="do not remove edge cuts from largest network component")
     parser.add_argument('--keep_node_cuts', default=False, action='store_true', help="do not remove node cuts from largest network component")
     parser.add_argument('--skip_node_cuts', default=False, action='store_true', help="skip node cut searching, used when the program gets stuck")
+    parser.add_argument('--ignore_comp', default=False, action='store_true', help="do not use connected components for choosing reference")
     args = parser.parse_args()
 
 
@@ -172,7 +173,8 @@ def calc_block_sum_of_unw_coh_component_size():
     ### Start counting indices for choosing the reference
     n_unw = np.zeros((length, width), dtype=np.float32)
     n_coh = np.zeros((length, width), dtype=np.float32)
-    n_con = np.zeros((length, width), dtype=np.float32)
+    if not args.ignore_comp:
+        n_con = np.zeros((length, width), dtype=np.float32)
 
     ### Accumulate through network (1)unw pixel counts, (2) coherence and (3) size of connected components
     for ifgd in ifgdates:
@@ -188,21 +190,26 @@ def calc_block_sum_of_unw_coh_component_size():
         coh = coh.astype(np.float32) / 255  # keep 0 as 0 which represent nan values
         n_coh += coh
 
-        # connected components in terms of component area (pixel count)
-        confile = os.path.join(ccdir, ifgd, ifgd+'.conncomp')
-        con = io_lib.read_img(confile, length, width, np.uint8)
-        # replace component index by component size. the first component is the 0th component, which should be of size 0
-        uniq_components, pixel_counts = np.unique(con.flatten(), return_counts=True)
-        for i, component in enumerate(uniq_components[1:]):
-            con[con==component] = pixel_counts[i+1]
-        n_con += con
+        if not args.ignore_comp:
 
-        del unw, coh, con
+            # connected components in terms of component area (pixel count)
+            confile = os.path.join(ccdir, ifgd, ifgd+'.conncomp')
+            con = io_lib.read_img(confile, length, width, np.uint8)
+            # replace component index by component size. the first component is the 0th component, which should be of size 0
+            uniq_components, pixel_counts = np.unique(con.flatten(), return_counts=True)
+            for i, component in enumerate(uniq_components[1:]):
+                con[con==component] = pixel_counts[i+1]
+            n_con += con
+
+        del unw, coh
+        if not args.ignore_comp:
+            del con
 
     ### calculate block sum
     block_unw = block_sum(n_unw, window_size)
     block_coh = block_sum(n_coh, window_size)
-    block_con = block_sum(n_con, window_size)
+    if not args.ignore_comp:
+        block_con = block_sum(n_con, window_size)
 
 
 def calc_height_std():
@@ -223,23 +230,29 @@ def clip_normalise_combine_indices():
     ### turn 0 to nan
     block_unw[block_unw == 0] = np.nan
     block_coh[block_coh == 0] = np.nan
-    block_con[block_con == 0] = np.nan
+    if not args.ignore_comp:
+        block_con[block_con == 0] = np.nan
     block_rms_hgt[block_rms_hgt == 0] = np.nan
 
     ### clipping values at zigzagy edges which are the lowest for block sums and highest for std
     block_unw[block_unw < np.nanpercentile(block_unw, 5)] = np.nanpercentile(block_unw, 5)
     block_coh[block_coh < np.nanpercentile(block_coh, 5)] = np.nanpercentile(block_coh, 5)
-    block_con[block_con < np.nanpercentile(block_con, 5)] = np.nanpercentile(block_con, 5)
+    if not args.ignore_comp:
+        block_con[block_con < np.nanpercentile(block_con, 5)] = np.nanpercentile(block_con, 5)
     block_rms_hgt[block_rms_hgt > np.nanpercentile(block_rms_hgt, 90)] = np.nanpercentile(block_rms_hgt, 90)
 
     ### normalise with nan minmax
     block_unw = (block_unw - np.nanmin(block_unw)) / (np.nanmax(block_unw) - np.nanmin(block_unw))
     block_coh = (block_coh - np.nanmin(block_coh)) / (np.nanmax(block_coh) - np.nanmin(block_coh))
-    block_con = (block_con - np.nanmin(block_con)) / (np.nanmax(block_con) - np.nanmin(block_con))
+    if not args.ignore_comp:
+        block_con = (block_con - np.nanmin(block_con)) / (np.nanmax(block_con) - np.nanmin(block_con))
     block_rms_hgt = (block_rms_hgt - np.nanmin(block_rms_hgt)) / (np.nanmax(block_rms_hgt) - np.nanmin(block_rms_hgt))
 
     ### calculate proxy from 4 indices and normalise
-    block_proxy = args.w_unw * block_unw + args.w_coh * block_coh + args.w_con * block_con - args.w_hgt * block_rms_hgt
+    if not args.ignore_comp:
+        block_proxy = args.w_unw * block_unw + args.w_coh * block_coh + args.w_con * block_con - args.w_hgt * block_rms_hgt
+    else:
+        block_proxy = args.w_unw * block_unw + args.w_coh * block_coh - args.w_hgt * block_rms_hgt
     block_proxy = (block_proxy - np.nanmin(block_proxy)) / (np.nanmax(block_proxy) - np.nanmin(block_proxy))
 
 
@@ -270,7 +283,8 @@ def plot_ref_proxies():
     fig, ax = plt.subplots(2, 3, sharey='all', sharex='all')
     im_unw = ax[0, 0].imshow(block_unw, vmin=0, vmax=1)
     im_coh = ax[0, 1].imshow(block_coh, vmin=0, vmax=1)
-    im_con = ax[1, 0].imshow(block_con, vmin=0, vmax=1)
+    if not args.ignore_comp:
+        im_con = ax[1, 0].imshow(block_con, vmin=0, vmax=1)
     im_hgt = ax[1, 1].imshow(block_rms_hgt, vmin=0, vmax=1)
     im_proxy = ax[0, 2].imshow(block_proxy)
     im_example = ax[1, 2].imshow(unw_example, cmap=cm.RdBu)
