@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     # downsample list to below -m threshold
     length = len(new_ifgdates)
-    downsample_factor = np.ceil(length / args.maximum_number)
+    downsample_factor = int(np.ceil(length / args.maximum_number))
     to_process_ifgdates = new_ifgdates[::downsample_factor]
 
     # export to text file
