@@ -35,6 +35,7 @@ def init_args():
     parser.add_argument('-o', dest='output_ifg_list', default="dense_list.txt", type=str, help="output text file containing a list of epochs")
     parser.add_argument('-l', dest='minimum_temporal_baseline', default=13, type=int, help="minimum temporal baseline in days")
     parser.add_argument('-u', dest='maximum_temporal_baseline', default=400, type=int, help="maximum temporal baseline in days")
+    parser.add_argument('-m', dest='maximum_number', default=500, type=int, help="evenly sample new list to below this total number")
     args = parser.parse_args()
 
 
@@ -57,18 +58,24 @@ if __name__ == "__main__":
     else:
         existing_ifgdates = []
 
-    # generate new ifg list
+    # generate a new ifg list
     ifgdates = []
     for e1 in epoch1:
         for e2 in epoch2:
             ifgdates.append(e1+"_"+e2)
 
-    # only keep those with
+    # only keep those with allowed range of temporal baselines
     dt = tools_lib.calc_temporal_baseline(ifgdates)
     mask = np.logical_and(np.array(dt) > args.minimum_temporal_baseline, np.array(dt) < args.maximum_temporal_baseline)
     ifgdates_masked = np.array(ifgdates)[mask].tolist()
-    to_process_ifgdates = list(set(ifgdates_masked)-set(existing_ifgdates))
+    new_ifgdates = sorted(list(set(ifgdates_masked)-set(existing_ifgdates)))
 
+    # downsample list to below -m threshold
+    length = len(new_ifgdates)
+    downsample_factor = np.ceil(length / args.maximum_number)
+    to_process_ifgdates = new_ifgdates[::downsample_factor]
+
+    # export to text file
     with open(args.output_ifg_list, 'w') as f:
         for i in to_process_ifgdates:
             print('{}'.format(i), file=f)
