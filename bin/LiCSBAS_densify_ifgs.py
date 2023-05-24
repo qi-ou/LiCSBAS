@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
 
 #%% Import
-import os
-import time
-import shutil
 import numpy as np
-from pathlib import Path
 import argparse
 import sys
-import re
-import xarray as xr
 import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
-import LiCSBAS_loop_lib as loop_lib
-import LiCSBAS_plot_lib as plot_lib
-import datetime as dt
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
