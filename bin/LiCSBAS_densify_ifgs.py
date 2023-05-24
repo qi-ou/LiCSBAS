@@ -32,7 +32,7 @@ def init_args():
     parser.add_argument('-p', dest='primary_epoch_list', default=None, type=str, help="input text file containing a list of epochs to serve as primary epochs")
     parser.add_argument('-s', dest='secondary_epoch_list', default=None, type=str, help="input text file containing a list of epochs to serve as secondary epochs")
     parser.add_argument('-e', dest='existing_ifg_list', default=None, type=str, help="input text file containing a list of epochs, used to avoid generating existing ifgs in the output list, or used to provide primary and secondary epochs when -p and -s are not used. ")
-    parser.add_argument('-o', dest='output_ifg_list', default=None, type=str, help="output text file containing a list of epochs")
+    parser.add_argument('-o', dest='output_ifg_list', default="dense_list.txt", type=str, help="output text file containing a list of epochs")
     parser.add_argument('-l', dest='minimum_temporal_baseline', default=13, type=int, help="minimum temporal baseline in days")
     parser.add_argument('-u', dest='maximum_temporal_baseline', default=400, type=int, help="maximum temporal baseline in days")
     args = parser.parse_args()
