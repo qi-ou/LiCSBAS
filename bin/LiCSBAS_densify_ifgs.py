@@ -70,17 +70,20 @@ if __name__ == "__main__":
     ifgdates_masked = np.array(ifgdates)[mask].tolist()
     new_ifgdates = sorted(list(set(ifgdates_masked)-set(existing_ifgdates)))
 
-    # separate new_ifgdates into two lists, one with primary epochs before 2017, one after 2017
-    new_primary = np.array([int(x[:4]) for x in new_ifgdates])
-    before_2017_ifgs = np.array(new_ifgdates)[new_primary < 2017].tolist()
-    after_2017_ifgs = np.array(new_ifgdates)[new_primary >= 2017].tolist()
+    if len(new_ifgdates) > args.maximum_number:
+        # separate new_ifgdates into two lists, one with primary epochs before 2017, one after 2017
+        new_primary = np.array([int(x[:4]) for x in new_ifgdates])
+        before_2017_ifgs = np.array(new_ifgdates)[new_primary < 2017].tolist()
+        after_2017_ifgs = np.array(new_ifgdates)[new_primary >= 2017].tolist()
 
-    # downsample list of ifgs after 2017 to make total number of ifgs below -m threshold
-    length = len(new_ifgdates)
-    length_before_2017 = len(before_2017_ifgs)
-    downsample_factor = int(np.ceil((length-length_before_2017) / (args.maximum_number-length_before_2017)))
-    downsampled_after_2017_ifgs = after_2017_ifgs[::downsample_factor]
-    to_process_ifgdates = before_2017_ifgs + downsampled_after_2017_ifgs
+        # downsample list of ifgs after 2017 to make total number of ifgs below -m threshold
+        length = len(new_ifgdates)
+        length_before_2017 = len(before_2017_ifgs)
+        downsample_factor = int(np.ceil((length-length_before_2017) / (args.maximum_number-length_before_2017)))
+        downsampled_after_2017_ifgs = after_2017_ifgs[::downsample_factor]
+        to_process_ifgdates = before_2017_ifgs + downsampled_after_2017_ifgs
+    else:
+        to_process_ifgdates = new_ifgdates
 
     # export to text file
     with open(args.output_ifg_list, 'w') as f:
