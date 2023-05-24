@@ -65,11 +65,11 @@ if __name__ == "__main__":
 
     # only keep those with
     dt = tools_lib.calc_temporal_baseline(ifgdates)
-    # ifgdates_masked = ifgdates[dt > args.minimum_temporal_baseline]
-    # ifgdates_masked = ifgdates_masked[dt < args.maximum_temporal_baseline]
+    ifgdates_masked = ifgdates[dt > args.minimum_temporal_baseline]
+    ifgdates_masked = ifgdates_masked[dt < args.maximum_temporal_baseline]
 
-    mask = np.logical_and(np.array(dt) > args.minimum_temporal_baseline, np.array(dt) < args.maximum_temporal_baseline)
-    ifgdates_masked = ifgdates[mask]
+    # mask = np.logical_and(np.array(dt) > args.minimum_temporal_baseline, np.array(dt) < args.maximum_temporal_baseline)
+    # ifgdates_masked = ifgdates[mask]
     to_process_ifgdates = list(set(ifgdates_masked)-set(existing_ifgdates))
 
     with open(args.output_ifg_list, 'w') as f:
