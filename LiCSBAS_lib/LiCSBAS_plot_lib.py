@@ -226,6 +226,8 @@ def plot_network(ifgdates, bperp, rm_ifgdates, pngfile, plot_bad=True, label_nam
         True  : Plot bad ifgs by red lines
         False : Do not plot bad ifgs
     """
+    if label_name is None:
+        label_name = 'Removed IFG'
 
     imdates_all = tools_lib.ifgdates2imdates(ifgdates)
     n_im_all = len(imdates_all)

@@ -79,12 +79,13 @@ def main(argv=None):
     remove_edge_cuts = True
     remove_node_cuts = True
     skip_node_cuts = False
+    label_name = None
 
 
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:en", ["help", "not_plot_bad", "not_strict", "skip_node_cuts"])
+            opts, args = getopt.getopt(argv[1:], "hi:b:o:r:sm:t:enl:", ["help", "not_plot_bad", "not_strict", "skip_node_cuts"])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -115,6 +116,8 @@ def main(argv=None):
                 remove_node_cuts = False
             elif o == '--skip_node_cuts':
                 skip_node_cuts = True
+            elif o == '-l':
+                label_name = a
 
 
         if not ifgfile:
@@ -213,7 +216,7 @@ def main(argv=None):
 
     else:    #%% Plot image
         pngfile = "{}{}_network.png".format(basename, suffix)
-        plot_lib.plot_network(ifgdates, bperp, bad_ifgdates, pngfile, plot_bad_flag)
+        plot_lib.plot_network(ifgdates, bperp, bad_ifgdates, pngfile, plot_bad_flag, label_name=label_name)
 
 
     #%% Finish
