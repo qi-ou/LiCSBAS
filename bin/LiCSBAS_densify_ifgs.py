@@ -78,10 +78,12 @@ if __name__ == "__main__":
 
         # downsample list of ifgs after 2017 to make total number of ifgs below -m threshold
         length = len(new_ifgdates)
-        length_before_2017 = len(before_2017_ifgs)
-        downsample_factor = int(np.ceil((length-length_before_2017) / (args.maximum_number-length_before_2017)))
-        downsampled_after_2017_ifgs = after_2017_ifgs[::downsample_factor]
-        to_process_ifgdates = before_2017_ifgs + downsampled_after_2017_ifgs
+        ratio = length / args.maximum_number
+        downsample_factor_before_2017 = int(np.floor(ratio))
+        downsample_factor_after_2017 = int(np.ceil(ratio))
+        downsampled_before_2017_ifgs = before_2017_ifgs[::downsample_factor_before_2017]
+        downsampled_after_2017_ifgs = after_2017_ifgs[::downsample_factor_after_2017]
+        to_process_ifgdates = downsampled_before_2017_ifgs + downsampled_after_2017_ifgs
     else:
         to_process_ifgdates = new_ifgdates
 
