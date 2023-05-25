@@ -1,4 +1,4 @@
-# What's new:
+### What's new:
 
 1. bin/LiCSBAS120_choose_reference.py: A script that automatically select a reference window based on coherence, pixel coverage, connected components and terrain ruggedness. 
 
