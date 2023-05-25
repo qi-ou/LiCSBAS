@@ -1,3 +1,18 @@
+# What's new:
+
+1. bin/LiCSBAS120_choose_reference.py: A script that automatically select a reference window based on coherence, pixel coverage, connected components and terrain ruggedness. 
+
+2. bin/LiCSBAS131_residual_threshold.py: A script that plots a histogram of RMS residuals per IFG for the network and to automatically suggest threshold for discarding IFGs from the network.
+
+3. bin/LiCSBAS132_3D_correction.py: A script that performs automatic correction of unwrapping mistake based on residuals. 
+
+4. bin/LiCSBAS_densify_ifgs.py: A script that generates a IFG pair list that could densify a network based on provided IFG list or lists of primiary and secondary epochs, with constraints of temporal baseline ranges and total number of additional IFGs needed. 
+ 
+
+
+
+
+
 (note: a testing binder ipynb tutorial is available [**here**](https://mybinder.org/v2/gh/comet-licsar/LiCSBAS/HEAD?labpath=licsbas_tutorial.ipynb))  
 
 
