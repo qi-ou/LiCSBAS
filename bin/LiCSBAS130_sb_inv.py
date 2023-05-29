@@ -179,7 +179,7 @@ def main():
     ## For parallel processing
     global n_para_gap, G, Aloop, unwpatch, imdates, incdir, ccdir, ifgdir, length, width,\
         coef_r2m, ifgdates, ref_unw, cycle, keep_incfile, resdir, restxtfile, \
-        cmap_vel, cmap_wrap, wavelength
+        cmap_vel, cmap_wrap, wavelength, args
 
     try:
         n_para = len(os.sched_getaffinity(0))
@@ -865,7 +865,7 @@ def inc_png_wrapper(imx):
     pngfile = os.path.join(incdir, '{}.increment.png'.format(ifgd))
     plot_lib.make_3im_png(data3, pngfile, cmap_wrap, title3, vmin=-np.pi, vmax=np.pi, cbar=False)
 
-    if not keep_incfile:
+    if not args.keep_incfile:
         os.remove(incfile)
 
 
@@ -881,7 +881,7 @@ def resid_png_wrapper(i):
     title = 'Residual (mm) of {} (RMS:{:.2f}mm)'.format(ifgd, resid_rms)
     plot_lib.make_im_png(resid, pngfile, cmap_vel, title, -wavelength/2*1000, wavelength/2*1000)
 
-    if not keep_incfile:
+    if not args.keep_incfile:
         os.remove(infile)
 
 
