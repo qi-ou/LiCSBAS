@@ -1,13 +1,18 @@
 ### What's new:
 
 1. bin/LiCSBAS120_choose_reference.py: A script that automatically select a reference window based on coherence, pixel coverage, connected components and terrain ruggedness. 
+![165D_04270_131313_120_reference](https://github.com/qi-ou/LiCSBAS/assets/49532476/9ddbaaa5-372e-4404-8169-723ec8181a96)
+
 
 2. bin/LiCSBAS131_residual_threshold.py: A script that plots a histogram of RMS residuals per IFG for the network and to automatically suggest threshold for discarding IFGs from the network.
+![131RMS_ifg_res_hist1](https://github.com/qi-ou/LiCSBAS/assets/49532476/55a8d083-1b97-4eb9-8bc8-617daee4ec9e)
 
 3. bin/LiCSBAS132_3D_correction.py: A script that performs automatic correction of unwrapping mistake based on residuals. 
+![20151115_20161103](https://github.com/qi-ou/LiCSBAS/assets/49532476/b5af9151-ec09-44c6-a872-2dbf5b840039)
 
 4. bin/LiCSBAS_densify_ifgs.py: A script that generates a IFG pair list that could densify a network based on provided IFG list or lists of primiary and secondary epochs, with constraints of temporal baseline ranges and total number of additional IFGs needed. 
  
+![combine_network](https://github.com/qi-ou/LiCSBAS/assets/49532476/a096620d-245a-49d3-b643-4e4c8f12e1da)
 
 
 
