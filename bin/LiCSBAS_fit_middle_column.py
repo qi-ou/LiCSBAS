@@ -31,12 +31,12 @@ class OpenTif:
 if __name__ == "__main__":
 
     # parse frame name as argument
-    parser = argparse.ArgumentParser(description="Detect coregistration error")
+    parser = argparse.ArgumentParser(description="Measuring slope of middle column")
     parser.add_argument("tif", help="tif file")
     args = parser.parse_args()
 
     tif = OpenTif(args.tif)
-    title = args.tif.split('/')[-1]
+    title = args.tif.split('/')[-1][:17]
 
     fig, ax=plt.subplots(1,2, figsize=(6, 3))
     ax[0].imshow(tif.data, vmin = np.nanpercentile(tif.data, 0.5), vmax = np.nanpercentile(tif.data, 99.5))
@@ -56,8 +56,8 @@ if __name__ == "__main__":
     ax[1].set_ylabel("Phase / mm")
     ax[1].set_title("Middle Column")
     plt.tight_layout()
-    plt.savefig("{}.png".format(title), dpi=500)
+    plt.savefig("{}.middle_column_slope.png".format(title), dpi=500)
     plt.close()
 
-    print(title, slope)
+    print(title[:17], slope)
 
