@@ -103,11 +103,11 @@ if __name__ == "__main__":
             slice = OpenTif(tif)
             cube[i, :, :] = slice.data - ref_tif.data
     else:  # keep the epochs the same as in existing h5
-        ref_tif = OpenTif(os.path.join(args.input_dir, str(cumh5['imdates'][0])+"."+args.input_suffix))
+        ref_tif = OpenTif(os.path.join(args.input_dir, str(cumh5['imdates'][0])+"*"+args.input_suffix))
         cube = np.ones([len(cumh5['imdates']), ref_tif.ysize, ref_tif.xsize])
         for i, tif in enumerate(cumh5['imdates']):
             print(tif)
-            slice = OpenTif(os.path.join(args.input_dir, str(cumh5['imdates'][i])+"."+args.input_suffix))
+            slice = OpenTif(os.path.join(args.input_dir, str(cumh5['imdates'][i])+"*"+args.input_suffix))
             cube[i, :, :] = slice.data - ref_tif.data
 
     # write into new cum.h5
