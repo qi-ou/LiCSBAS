@@ -60,7 +60,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='input_dir', default="./GACOSml10/", type=str, help="input directory containing gacos epochs")
     parser.add_argument('-s', dest='input_suffix', default=".sltd.geo.tif", type=str, help="suffix of gacos epochs")
-    parser.add_argument('-g', dest='new_cumh5file', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
+    parser.add_argument('-g', dest='outfile', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
     parser.add_argument('-c', dest='existing_cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
     parser.add_argument('-e', dest='same_epochs_as_existing_h5', default=False, action='store_true', help="only add the same epochs as in the existing h5")
     args = parser.parse_args()
@@ -82,7 +82,7 @@ def finish():
     sec = int(np.mod(elapsed_time,60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-    print('Output: {}\n'.format(os.path.relpath(args.component_cumh5file)))
+    print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
 if __name__ == "__main__":
@@ -111,7 +111,7 @@ if __name__ == "__main__":
             cube[i, :, :] = slice.data - ref_tif.data
 
     # write into new cum.h5
-    gacosh5 = h5.File(args.new_cumh5file, 'w')
+    gacosh5 = h5.File(args.outfile, 'w')
     compress = 'gzip'
     gacosh5.create_dataset('cum', data=cube, compression=compress)
     gacosh5.create_dataset('refarea', data=cumh5['refarea'] )
