@@ -86,6 +86,7 @@ def finish():
 
 if __name__ == "__main__":
     init_args()
+    start()
 
     # add epochs into cube referenced to the first epoch
     tifList = sorted(glob.glob(os.path.join(args.input_dir, '*'+args.input_suffix)))
@@ -114,3 +115,5 @@ if __name__ == "__main__":
     gacosh5.close()
     # close existing cum.h5
     cumh5.close()
+
+    finish()
