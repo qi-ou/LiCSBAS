@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-v1.0.0 20230523 Qi Ou, ULeeds
-
 ========
 Overview
 ========
-This script loads gacos.sltd.geo.tif into a gacos_cum.h5, and copy over other metadata from cum.h5
+This script loads epoch-wide tif files into an h5 cube referenced to the first epoch, and copy over other metadata from an existing cum.h5
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -18,6 +17,10 @@ import SCM
 import glob
 from osgeo import gdal
 import h5py as h5
+
+
+global ver, date, author
+ver = "1.0"; date = 20230605; author = "Qi Ou, ULeeds"  # generalise to any epoch
 
 
 class OpenTif:
@@ -62,19 +65,34 @@ def init_args():
     args = parser.parse_args()
 
 
+def start():
+    global start_time
+    # intialise and print info on screen
+    start_time = time.time()
+    print("\n{} ver{} {} {}".format(os.path.basename(sys.argv[0]), ver, date, author), flush=True)
+    print("{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
+
+
+def finish():
+    #%% Finish
+    elapsed_time = time.time() - start_time
+    hour = int(elapsed_time/3600)
+    minite = int(np.mod((elapsed_time/60),60))
+    sec = int(np.mod(elapsed_time,60))
+    print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
+    print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
+    print('Output: {}\n'.format(os.path.relpath(args.component_cumh5file)))
+
+
 if __name__ == "__main__":
     init_args()
-
-    # input_dir = args.input_dir # "./GACOSml10/"
-    # input_suffix = args.input_suffix # ".sltd.geo.tif"
-    # component_cumh5file = args.component_cumh5file # "gacos_cum.h5"
-    # cumh5file = args.cumh5file # 'TS_GEOCml10GACOS/cum.h5'
 
     # add epochs into cube referenced to the first epoch
     tifList = sorted(glob.glob(os.path.join(args.input_dir, '*'+args.input_suffix)))
     ref_tif = OpenTif(tifList[0])
     cube = np.ones([len(tifList), ref_tif.ysize, ref_tif.xsize])
     for i, tif in enumerate(tifList):
+        print(tif)
         slice = OpenTif(tif)
         cube[i, :, :] = slice.data - ref_tif.data
 
