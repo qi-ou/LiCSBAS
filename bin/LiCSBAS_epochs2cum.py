@@ -60,8 +60,9 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='input_dir', default="./GACOSml10/", type=str, help="input directory containing gacos epochs")
     parser.add_argument('-s', dest='input_suffix', default=".sltd.geo.tif", type=str, help="suffix of gacos epochs")
-    parser.add_argument('-g', dest='component_cumh5file', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
-    parser.add_argument('-c', dest='cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
+    parser.add_argument('-g', dest='new_cumh5file', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
+    parser.add_argument('-c', dest='existing_cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
+    parser.add_argument('-s', dest='same_epochs_as_existing_h5', default=False, action='store_true', help="only add the same epochs as in the existing h5")
     args = parser.parse_args()
 
 
@@ -88,20 +89,29 @@ if __name__ == "__main__":
     init_args()
     start()
 
-    # add epochs into cube referenced to the first epoch
-    tifList = sorted(glob.glob(os.path.join(args.input_dir, '*'+args.input_suffix)))
-    ref_tif = OpenTif(tifList[0])
-    cube = np.ones([len(tifList), ref_tif.ysize, ref_tif.xsize])
-    for i, tif in enumerate(tifList):
-        print(tif)
-        slice = OpenTif(tif)
-        cube[i, :, :] = slice.data - ref_tif.data
+    # Open existing cum.h5 for reading metadata
+    cumh5 = h5.File(args.existing_cumh5file, 'a')
 
-    # read metadata from existing cum.h5
-    cumh5 = h5.File(args.cumh5file, 'a')
+    # if adding all available epochs into cube
+    if not args.same_epochs_as_existing_h5:
+        # add epochs into cube referenced to the first epoch
+        tifList = sorted(glob.glob(os.path.join(args.input_dir, '*'+args.input_suffix)))
+        ref_tif = OpenTif(tifList[0])
+        cube = np.ones([len(tifList), ref_tif.ysize, ref_tif.xsize])
+        for i, tif in enumerate(tifList):
+            print(tif)
+            slice = OpenTif(tif)
+            cube[i, :, :] = slice.data - ref_tif.data
+    else:  # keep the epochs the same as in existing h5
+        ref_tif = OpenTif(os.path.join(args.input_dir, cumh5['imdates'][0]+args.input_suffix))
+        cube = np.ones([len(cumh5['imdates']), ref_tif.ysize, ref_tif.xsize])
+        for i, tif in enumerate(cumh5['imdates']):
+            print(tif)
+            slice = OpenTif(os.path.join(args.input_dir, cumh5['imdates'][i]+args.input_suffix))
+            cube[i, :, :] = slice.data - ref_tif.data
 
     # write into new cum.h5
-    gacosh5 = h5.File(args.component_cumh5file, 'w')
+    gacosh5 = h5.File(args.new_cumh5file, 'w')
     compress = 'gzip'
     gacosh5.create_dataset('cum', data=cube, compression=compress)
     gacosh5.create_dataset('refarea', data=cumh5['refarea'] )
@@ -113,6 +123,7 @@ if __name__ == "__main__":
 
     # close new cum.h5
     gacosh5.close()
+
     # close existing cum.h5
     cumh5.close()
 
