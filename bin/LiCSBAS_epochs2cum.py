@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""
+v1.0.0 20230523 Qi Ou, ULeeds
+
+========
+Overview
+========
+This script loads gacos.sltd.geo.tif into a gacos_cum.h5, and copy over other metadata from cum.h5
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import argparse
+import time
+import sys
+from matplotlib import cm
+import SCM
+import glob
+from osgeo import gdal
+import h5py as h5
+
+
+class OpenTif:
+    """ a Class that stores the band array and metadata of a Gtiff file."""
+    def __init__(self, filename, sigfile=None, incidence=None, heading=None, N=None, E=None, U=None):
+        self.ds = gdal.Open(filename)
+        self.basename = os.path.splitext(os.path.basename(filename))[0]
+        self.band = self.ds.GetRasterBand(1)
+        self.data = self.band.ReadAsArray()
+        self.xsize = self.ds.RasterXSize
+        self.ysize = self.ds.RasterYSize
+        self.left = self.ds.GetGeoTransform()[0]
+        self.top = self.ds.GetGeoTransform()[3]
+        self.xres = self.ds.GetGeoTransform()[1]
+        self.yres = self.ds.GetGeoTransform()[5]
+        self.right = self.left + self.xsize * self.xres
+        self.bottom = self.top + self.ysize * self.yres
+        self.projection = self.ds.GetProjection()
+        pix_lin, pix_col = np.indices((self.ds.RasterYSize, self.ds.RasterXSize))
+        self.lat, self.lon = self.top + self.yres*pix_lin, self.left+self.xres*pix_col
+
+        # convert 0 and 255 to NaN
+        self.data[self.data==0.] = np.nan
+
+
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    '''
+    Use a multiple inheritance approach to use features of both classes.
+    The ArgumentDefaultsHelpFormatter class adds argument default values to the usage help message
+    The RawDescriptionHelpFormatter class keeps the indentation and line breaks in the ___doc___
+    '''
+    pass
+
+
+def init_args():
+    global args
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
+    parser.add_argument('-i', dest='input_dir', default="./GACOSml10/", type=str, help="input directory containing gacos epochs")
+    parser.add_argument('-s', dest='input_suffix', default=".sltd.geo.tif", type=str, help="suffix of gacos epochs")
+    parser.add_argument('-g', dest='component_cumh5file', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
+    parser.add_argument('-c', dest='cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
+    args = parser.parse_args()
+
+
+if __name__ == "__main__":
+    init_args()
+
+    # input_dir = args.input_dir # "./GACOSml10/"
+    # input_suffix = args.input_suffix # ".sltd.geo.tif"
+    # component_cumh5file = args.component_cumh5file # "gacos_cum.h5"
+    # cumh5file = args.cumh5file # 'TS_GEOCml10GACOS/cum.h5'
+
+    # add epochs into cube referenced to the first epoch
+    tifList = sorted(glob.glob(os.path.join(args.input_dir, '*'+args.input_suffix)))
+    ref_tif = OpenTif(tifList[0])
+    cube = np.ones([len(tifList), ref_tif.ysize, ref_tif.xsize])
+    for i, tif in enumerate(tifList):
+        slice = OpenTif(tif)
+        cube[i, :, :] = slice.data - ref_tif.data
+
+    # read metadata from existing cum.h5
+    cumh5 = h5.File(args.cumh5file, 'a')
+
+    # write into new cum.h5
+    gacosh5 = h5.File(args.component_cumh5file, 'w')
+    compress = 'gzip'
+    gacosh5.create_dataset('cum', data=cube, compression=compress)
+    gacosh5.create_dataset('refarea', data=cumh5['refarea'] )
+    gacosh5.create_dataset('imdates', data=cumh5['imdates'] )
+    gacosh5.create_dataset('corner_lat', data=cumh5['refarea'])
+    gacosh5.create_dataset('corner_lon', data=cumh5['corner_lon'])
+    gacosh5.create_dataset('post_lat', data=cumh5['post_lat'])
+    gacosh5.create_dataset('post_lon', data=cumh5['post_lon'])
+
+    # close new cum.h5
+    gacosh5.close()
+    # close existing cum.h5
+    cumh5.close()
