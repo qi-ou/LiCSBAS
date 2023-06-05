@@ -6,8 +6,7 @@ import os
 import argparse
 from osgeo import gdal
 from scipy import stats
-import cmcrameri.cm as cm
-
+import SCM
 
 class OpenTif:
     """ a Class that stores the band array and metadata of a Gtiff file."""
@@ -40,7 +39,7 @@ if __name__ == "__main__":
     tif = OpenTif(args.tif)
     title = args.tif.split('/')[-1][:17]
     fig, ax = plt.subplots(1, 2, figsize=(6, 3))
-    im=ax[0].imshow(tif.data, vmin=np.nanpercentile(tif.data, 0.5), vmax=np.nanpercentile(tif.data, 99.5), cmap=cm.roma.reversed())
+    im=ax[0].imshow(tif.data, vmin=np.nanpercentile(tif.data, 0.5), vmax=np.nanpercentile(tif.data, 99.5), cmap=SCM.roma.reversed())
     ax[0].set_title(title)
     plt.colorbar(im, ax=ax[0])
 
