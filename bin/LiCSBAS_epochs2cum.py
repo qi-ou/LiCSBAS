@@ -60,7 +60,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='input_dir', default="./GACOSml10/", type=str, help="input directory containing gacos epochs")
     parser.add_argument('-s', dest='input_suffix', default=".sltd.geo.tif", type=str, help="suffix of gacos epochs")
-    parser.add_argument('-g', dest='outfile', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
+    parser.add_argument('-o', dest='outfile', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
     parser.add_argument('-c', dest='existing_cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
     parser.add_argument('-e', dest='same_epochs_as_existing_h5', default=False, action='store_true', help="only add the same epochs as in the existing h5")
     parser.add_argument('--radian2mm', default=False, action='store_true', help="convert from radian to mm")
