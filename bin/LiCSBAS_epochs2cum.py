@@ -63,6 +63,7 @@ def init_args():
     parser.add_argument('-g', dest='outfile', default="gacos_cum.h5", type=str, help="output cumulative displacement from gacos epochs")
     parser.add_argument('-c', dest='existing_cumh5file', default='TS_GEOCml10GACOS/cum.h5', type=str, help="cumulative displacement from LiCSBAS inversion to copy over meta data only")
     parser.add_argument('-e', dest='same_epochs_as_existing_h5', default=False, action='store_true', help="only add the same epochs as in the existing h5")
+    parser.add_argument('--radian2mm', default=False, action='store_true', help="convert from radian to mm")
     args = parser.parse_args()
 
 
@@ -110,10 +111,19 @@ if __name__ == "__main__":
             slice = OpenTif(glob.glob(os.path.join(args.input_dir, str(cumh5['imdates'][i])+"*"+args.input_suffix))[0])
             cube[i, :, :] = slice.data - ref_tif.data
 
+    ### Get scaling factor
+    if args.radian2mm:
+        speed_of_light = 299792458 #m/s
+        radar_frequency = 5405000000.0 #Hz
+        wavelength = speed_of_light/radar_frequency #meter
+        coef_r2m = -wavelength/4/np.pi*1000 #rad -> mm, positive is -LOS
+    else:
+        coef_r2m = 1
+
     # write into new cum.h5
     gacosh5 = h5.File(args.outfile, 'w')
     compress = 'gzip'
-    gacosh5.create_dataset('cum', data=cube, compression=compress)
+    gacosh5.create_dataset('cum', data=cube*coef_r2m, compression=compress)
     gacosh5.create_dataset('refarea', data=cumh5['refarea'] )
     gacosh5.create_dataset('imdates', data=cumh5['imdates'] )
     gacosh5.create_dataset('corner_lat', data=cumh5['refarea'])
