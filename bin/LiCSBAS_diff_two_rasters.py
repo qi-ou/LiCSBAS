@@ -61,7 +61,7 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument(dest='first', type=str, help="path to first raster (binary or tiff)")
     parser.add_argument(dest='second', type=str, help="path to second raster of the same size (binary or tiff)")
-    parser.add_argument('-o', dest='outfile', type=str, help="output difference raster in tiff")
+    parser.add_argument('-o', dest='outfile', type=str, help="pngfile of a 3 panel plot showing the difference")
     parser.add_argument('-d', dest='ifgdir', default='GEOCml10GACOS', type=str, help="directory containing slc.mli.par, required if rasters not in tiff format")
     args = parser.parse_args()
 
@@ -74,7 +74,7 @@ def start():
     print("{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
 
 
-def finish():
+def finish(outfile):
     #%% Finish
     elapsed_time = time.time() - start_time
     hour = int(elapsed_time/3600)
@@ -82,7 +82,7 @@ def finish():
     sec = int(np.mod(elapsed_time,60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-    print('Output: {}\n'.format(os.path.relpath(args.outfile)))
+    print('Output: {}\n'.format(os.path.relpath(outfile)))
 
 
 if __name__ == "__main__":
@@ -100,7 +100,10 @@ if __name__ == "__main__":
 
     data3 = [array1, array2, array1-array2]
     title3 = [title1, title2, "Diff (panel 1 - 2)"]
-    pngfile = "diff_{}-{}.png".format(title1, title2)
+    if args.outfile:
+        pnefile=args.outfile
+    else:
+        pngfile = "diff_{}-{}.png".format(title1, title2)
     plot_lib.make_3im_png(data3, pngfile, "insar", title3, vmin=None, vmax=None, cbar=True)
 
-    finish()
+    finish(pngfile)
