@@ -106,6 +106,17 @@ if __name__ == "__main__":
         pnefile=args.outfile
     else:
         pngfile = "diff_{}-{}.png".format(title1, title2)
-    plot_lib.make_3im_png(data3, pngfile, SCM.roma.reversed(), title3, vmin=args.vmin, vmax=args.vmax, cbar=True)
+
+    if args.vmin:
+        vmin = args.vmin
+    else:
+        vmin = None
+
+    if args.vmax:
+        vmax = args.vmax
+    else:
+        vmax = None
+
+    plot_lib.make_3im_png(data3, pngfile, SCM.roma.reversed(), title3, vmin=vmin, vmax=vmax, cbar=True)
 
     finish(pngfile)
