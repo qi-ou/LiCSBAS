@@ -104,6 +104,6 @@ if __name__ == "__main__":
         pnefile=args.outfile
     else:
         pngfile = "diff_{}-{}.png".format(title1, title2)
-    plot_lib.make_3im_png(data3, pngfile, "insar", title3, vmin=None, vmax=None, cbar=True)
+    plot_lib.make_3im_png(data3, pngfile, SCM.roma.reversed(), title3, vmin=None, vmax=None, cbar=True)
 
     finish(pngfile)
