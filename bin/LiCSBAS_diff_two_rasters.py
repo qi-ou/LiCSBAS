@@ -59,8 +59,8 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescri
 def init_args():
     global args
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
-    parser.add_argument(dest='first', type=str, help="path to first raster (binary or tiff)")
-    parser.add_argument(dest='second', type=str, help="path to second raster of the same size (binary or tiff)")
+    parser.add_argument(dest='first', type=str, help="path to first raster")
+    parser.add_argument(dest='second', type=str, help="path to second raster of the same size")
     parser.add_argument('--vmin', dest='vmin', type=float, help="lower end of colourmap")
     parser.add_argument('--vmax', dest='vmax', type=float, help="upper end of colourmap")
     parser.add_argument('-o', dest='outfile', type=str, help="pngfile of a 3 panel plot showing the difference")
