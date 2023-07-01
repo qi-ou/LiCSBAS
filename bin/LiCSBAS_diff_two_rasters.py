@@ -61,6 +61,8 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument(dest='first', type=str, help="path to first raster (binary or tiff)")
     parser.add_argument(dest='second', type=str, help="path to second raster of the same size (binary or tiff)")
+    parser.add_argument('--vmin', dest='vmin', type=float, help="lower end of colourmap")
+    parser.add_argument('--vmax', dest='vmax', type=float, help="upper end of colourmap")
     parser.add_argument('-o', dest='outfile', type=str, help="pngfile of a 3 panel plot showing the difference")
     parser.add_argument('-d', dest='ifgdir', default='GEOCml10GACOS', type=str, help="directory containing slc.mli.par, required if rasters not in tiff format")
     args = parser.parse_args()
@@ -104,6 +106,6 @@ if __name__ == "__main__":
         pnefile=args.outfile
     else:
         pngfile = "diff_{}-{}.png".format(title1, title2)
-    plot_lib.make_3im_png(data3, pngfile, SCM.roma.reversed(), title3, vmin=None, vmax=None, cbar=True)
+    plot_lib.make_3im_png(data3, pngfile, SCM.roma.reversed(), title3, vmin=args.vmin, vmax=args.vmax, cbar=True)
 
     finish(pngfile)
