@@ -36,7 +36,7 @@ def init_args():
     parser.add_argument('-t', dest='delta_t', default="xx.dt", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
-    parser.add_argument('-s', dest='de-season', default=False, action='store_true', help="remove seasonal component")
+    parser.add_argument('-s', dest='de_season', default=False, action='store_true', help="remove seasonal component")
     args = parser.parse_args()
 
 
