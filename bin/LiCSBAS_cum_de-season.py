@@ -57,6 +57,7 @@ def finish():
 
 
 def plot_cum_grid(cum, titles, suptitle, png, vmin=-20, vmax=20):
+    print("Plotting {}".format(png))
     # decide dimension of plotting grid
     n_im = cum.shape[0]
     n_row = int(np.sqrt(n_im))
@@ -66,7 +67,7 @@ def plot_cum_grid(cum, titles, suptitle, png, vmin=-20, vmax=20):
     for i in np.arange(n_im):
         row = i // n_col
         col = i % n_col
-        print(i, row, col)
+        # print(i, row, col)
         im = ax[row, col].imshow(cum[i, :, :], vmin=vmin, vmax=vmax, cmap=SCM.roma.reversed())
         ax[row, col].set_title(titles[i])
     plt.suptitle(suptitle)
