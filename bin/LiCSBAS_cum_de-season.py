@@ -35,6 +35,7 @@ def init_args():
     parser.add_argument('-i', dest='cumfile', default="cum.h5", type=str, help="input .h5 file")
     parser.add_argument('-t', dest='delta_t', default="xx.dt", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
+    parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
     args = parser.parse_args()
 
 
@@ -52,10 +53,10 @@ def finish():
     sec = int(np.mod(elapsed_time,60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour, minite, sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-    print('Output: {}\n'.format(os.path.relpath(args.outfile)))
+    # print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
-def plot_cum_grid(cum, titles, suptitle, png, downsample=10, vmin=-20, vmax=20):
+def plot_cum_grid(cum, titles, suptitle, png, vmin=-20, vmax=20):
     # decide dimension of plotting grid
     n_im = cum.shape[0]
     n_row = int(np.sqrt(n_im))
@@ -66,7 +67,7 @@ def plot_cum_grid(cum, titles, suptitle, png, downsample=10, vmin=-20, vmax=20):
         row = i // n_col
         col = i % n_col
         print(i, row, col)
-        im = ax[row, col].imshow(cum[i, ::downsample, ::downsample], vmin=vmin, vmax=vmax, cmap=SCM.roma.reversed())
+        im = ax[row, col].imshow(cum[i, :, :], vmin=vmin, vmax=vmax, cmap=SCM.roma.reversed())
         ax[row, col].set_title(titles[i])
     plt.suptitle(suptitle)
     fig.colorbar(im, ax=ax, label="Displacement, mm/yr")
@@ -82,11 +83,14 @@ if __name__ == "__main__":
     cumh5 = h5.File(args.cumfile,'r')
     imdates = cumh5['imdates'][()].astype(str).tolist()
     cum = cumh5['cum']
+    cum = cum[:, :args.downsample, :args.downsample]
     n_im, length, width = cum.shape
 
     # read dt and amp from inputs
     delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
     amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
+    delta_t = delta_t[:args.downsample,: args.downsample]
+    amp = amp[:args.downsample,: args.downsample]
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
@@ -94,15 +98,14 @@ if __name__ == "__main__":
 
     # remove seasonal_cum from cum to get remaining cum
     print("Removing seasonal component...")
-    small_length = length//10
-    small_width = width//10
-    seasonal_cum = np.zeros((n_im, small_length, small_width)) * np.nan
-    remain_cum = np.zeros((n_im, small_length, small_width)) * np.nan
+
+    seasonal_cum = np.zeros((n_im, length, width)) * np.nan
+    remain_cum = np.zeros((n_im, length, width)) * np.nan
     print("New cubes created...")
-    for x in np.arange(small_width):
-        if x % (small_width//10) == 0:
-            print("Processing {}%".format(x // (small_width//10)))
-        for y in np.arange(small_length):
+    for x in np.arange(width):
+        if x % (width//10) == 0:
+            print("Processing {}0%".format(x // (width//10)))
+        for y in np.arange(length):
             seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
             remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
 
@@ -115,7 +118,7 @@ if __name__ == "__main__":
 
     # plot 3 cumulative displacement grids
     print("Plotting time series tiles...")
-    # plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
+    plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
     plot_cum_grid(seasonal_cum, imdates, "Seasonal cumulative displacement", args.cumfile + ".seasonal.png")
     plot_cum_grid(remain_cum, imdates, "De-seasoned cumulative displacement", args.cumfile + ".de-seasoned.png")
 
