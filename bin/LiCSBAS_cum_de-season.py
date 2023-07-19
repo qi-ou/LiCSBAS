@@ -56,14 +56,16 @@ def finish():
     # print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
-def plot_cum_grid(cum, titles, suptitle, png, vmin=-20, vmax=20):
+def plot_cum_grid(cum, titles, suptitle, png):
+    vmin = np.nanpercentile(cum[-1, :, :], 1)
+    vmax = np.nanpercentile(cum[-1, :, :], 99)
     print("Plotting {}".format(png))
     # decide dimension of plotting grid
     n_im = cum.shape[0]
     n_row = int(np.sqrt(n_im))
     n_col = int(np.ceil(n_im / n_row))
 
-    fig, ax = plt.subplots(n_row, n_col, sharex='all', sharey='all', figsize=(2*n_row*length/width, 2*n_col))
+    fig, ax = plt.subplots(n_row, n_col, sharex='all', sharey='all', figsize=(2*n_col*length/width, 2*n_row))
     for i in np.arange(n_im):
         row = i // n_col
         col = i % n_col
