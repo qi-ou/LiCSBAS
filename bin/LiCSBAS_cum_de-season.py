@@ -36,6 +36,7 @@ def init_args():
     parser.add_argument('-t', dest='delta_t', default="xx.dt", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
+    parser.add_argument('-s', dest='de-season', default=False, action='store_true', help="remove seasonal component")
     args = parser.parse_args()
 
 
@@ -88,13 +89,15 @@ if __name__ == "__main__":
     cum = cumh5['cum']
     n_im, length, width = cum.shape
 
-    # read dt and amp from inputs
-    delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
-    amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
+    if args.de_season:
+        # read dt and amp from inputs
+        delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
+        amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
 
-    cum = cum[:, ::args.downsample, ::args.downsample]
-    delta_t = delta_t[::args.downsample,::args.downsample]
-    amp = amp[::args.downsample,::args.downsample]
+        cum = cum[:, ::args.downsample, ::args.downsample]
+        delta_t = delta_t[::args.downsample,::args.downsample]
+        amp = amp[::args.downsample,::args.downsample]
+
     length = length // args.downsample
     width = width // args.downsample
 
@@ -102,30 +105,26 @@ if __name__ == "__main__":
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
     dt_cum = np.float32((np.array(imdates_dt) - imdates_dt[0]) / 365.25)
 
-    # remove seasonal_cum from cum to get remaining cum
-    print("Removing seasonal component...")
+    if args.de_season:
 
-    seasonal_cum = np.zeros((n_im, length, width)) * np.nan
-    remain_cum = np.zeros((n_im, length, width)) * np.nan
-    print("New cubes created...")
-    for x in np.arange(width):
-        if x % (width//10) == 0:
-            print("Processing {}0%".format(x // (width//10)))
-        for y in np.arange(length):
-            seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
-            remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
+        # remove seasonal_cum from cum to get remaining cum
+        print("Removing seasonal component...")
 
-            # plot time series de-seasoning
-            # plt.plot(cum[:, y, x], label='cum')
-            # plt.plot(seasonal_cum[:, y, x], label='seasonal')
-            # plt.plot(remain_cum[:, y, x], label='remain')
-            # plt.legend()
-            # plt.show()
+        seasonal_cum = np.zeros((n_im, length, width)) * np.nan
+        remain_cum = np.zeros((n_im, length, width)) * np.nan
+        print("New cubes created...")
+        for x in np.arange(width):
+            if x % (width//10) == 0:
+                print("Processing {}0%".format(x // (width//10)))
+            for y in np.arange(length):
+                seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
+                remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
 
     # plot 3 cumulative displacement grids
     print("Plotting time series tiles...")
     plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
-    plot_cum_grid(seasonal_cum, imdates, "Seasonal cumulative displacement", args.cumfile + ".seasonal.png")
-    plot_cum_grid(remain_cum, imdates, "De-seasoned cumulative displacement", args.cumfile + ".de-seasoned.png")
+    if args.de_season:
+        plot_cum_grid(seasonal_cum, imdates, "Seasonal cumulative displacement", args.cumfile + ".seasonal.png")
+        plot_cum_grid(remain_cum, imdates, "De-seasoned cumulative displacement", args.cumfile + ".de-seasoned.png")
 
     finish()
