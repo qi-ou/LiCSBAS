@@ -94,13 +94,15 @@ if __name__ == "__main__":
 
     # remove seasonal_cum from cum to get remaining cum
     print("Removing seasonal component...")
-    seasonal_cum = np.zeros((n_im, length, width)) * np.nan
-    remain_cum = np.zeros((n_im, length, width)) * np.nan
+    small_length = length//10
+    small_width = width//10
+    seasonal_cum = np.zeros((n_im, small_length, small_width)) * np.nan
+    remain_cum = np.zeros((n_im, small_length, small_width)) * np.nan
     print("New cubes created...")
-    for x in np.arange(width):
-        if x % (width//100) == 0:
-            print(x)
-        for y in np.arange(length):
+    for x in np.arange(small_width):
+        if x % (small_width//10) == 0:
+            print("Processing {}%".format(x // (small_width//10)))
+        for y in np.arange(small_length):
             seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
             remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
 
@@ -113,7 +115,7 @@ if __name__ == "__main__":
 
     # plot 3 cumulative displacement grids
     print("Plotting time series tiles...")
-    plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
+    # plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
     plot_cum_grid(seasonal_cum, imdates, "Seasonal cumulative displacement", args.cumfile + ".seasonal.png")
     plot_cum_grid(remain_cum, imdates, "De-seasoned cumulative displacement", args.cumfile + ".de-seasoned.png")
 
