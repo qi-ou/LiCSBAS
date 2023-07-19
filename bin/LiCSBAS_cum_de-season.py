@@ -96,7 +96,10 @@ if __name__ == "__main__":
     print("Removing seasonal component...")
     seasonal_cum = np.zeros((n_im, length, width)) * np.nan
     remain_cum = np.zeros((n_im, length, width)) * np.nan
+    print("New cubes created...")
     for x in np.arange(width):
+        if x % (width//100) == 0:
+            print(x)
         for y in np.arange(length):
             seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
             remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
