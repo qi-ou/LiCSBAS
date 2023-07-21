@@ -106,16 +106,15 @@ if __name__ == "__main__":
     n_im, length, width = cum.shape
 
     if args.de_season:
-        # read dt and amp from inputs
+        # read dt and amp from inputs and downsample
         delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
         amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
-
-        cum = cum[:, ::args.downsample, ::args.downsample]
         delta_t = delta_t[::args.downsample,::args.downsample]
         amp = amp[::args.downsample,::args.downsample]
 
     length = length // args.downsample
     width = width // args.downsample
+    cum = cum[:, ::args.downsample, ::args.downsample]
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
