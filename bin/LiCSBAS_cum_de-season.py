@@ -136,7 +136,7 @@ if __name__ == "__main__":
         cum_ref = np.ones(cum.shape) * np.nan
         for i in np.arange(n_im):
             cum_ref[i, :, :] = cum[i, :, :] - cum[i, cum.shape[1]//2, cum.shape[2]//2]
-        plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + ".png")
+        plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
         cum = cum_ref
 
     if args.de_season:
