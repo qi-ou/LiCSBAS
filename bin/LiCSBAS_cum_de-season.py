@@ -130,21 +130,21 @@ if __name__ == "__main__":
     cum = cumh5['cum']
     n_im, length, width = cum.shape
 
-    if args.de_season:
-        # read dt and amp from inputs and downsample
-        delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
-        amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
-        delta_t = delta_t[::args.downsample,::args.downsample]
-        amp = amp[::args.downsample,::args.downsample]
-
     # downsample
     cum = cum[:, ::args.downsample, ::args.downsample]
+    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
     dt_cum = np.float32((np.array(imdates_dt) - imdates_dt[0]) / 365.25)
+    epochs = ([dt.datetime.strptime(imd, '%Y%m%d') for imd in imdates])
 
     if args.de_season:
+        # read dt and amp from inputs and downsample
+        delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
+        amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
+        delta_t = delta_t[::args.downsample, ::args.downsample]
+        amp = amp[::args.downsample, ::args.downsample]
 
         # remove seasonal_cum from cum to get remaining cum
         print("Removing seasonal component...")
@@ -173,21 +173,18 @@ if __name__ == "__main__":
             azi_coefs.append(azi_coef)
 
         # plot time series of ramp parameters
-        plt.plot(imdates_dt, range_coefs, label="range_coef")
-        plt.plot(imdates_dt, azi_coefs, label="azi_coef")
+        plt.plot(epochs, range_coefs, label="range_coef")
+        plt.plot(epochs, azi_coefs, label="azi_coef")
         plt.xlabel("Epoch")
         plt.ylabel("ramp rate unit/pixel")
         plt.title(args.cumfile)
+        plt.legend()
         plt.savefig(args.cumfile + "_ramp_coefs.png")
         plt.close()
 
         flat_cum = cum - ramp_cum
+        ramp_cum[np.isnan(cum)] = np.nan
         plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
         plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
-
-
-    print("Plotting time series tiles...")
-    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
-
 
     finish()
