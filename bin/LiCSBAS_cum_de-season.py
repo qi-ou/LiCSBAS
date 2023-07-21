@@ -98,29 +98,20 @@ def plot_cum_grid(cum1, titles, suptitle, png):
 
 def fit_plane(z, theta=0):
     """Fit a plane to data.
-
     Parameters
     ----------
     z : `numpy.ndarray`
         2D array of z values
-
-    Returns
-    -------
-    `numpy.ndarray`
-        array representation of plane
-
+    theta : heading angle in radian
     """
-    indices = np.argwhere(np.isfinite(z))
-    yy = -indices.T[0]  # minus to make y axis positive upward, otherwise indices increases down the rows
-    xx = indices.T[1]
-    nonnan_z = z[np.isfinite(z)]
-    flat = np.ones(nonnan_z)
+    yy, xx = np.indices(z.shape)
+    yy = -yy  # minus to make y axis positive upward, otherwise indices increases down the rows
+    ones = np.ones(z.shape)
 
-    coefs = np.linalg.lstsq(np.stack([xx, yy, flat]).T, nonnan_z.flatten(), rcond=None)[0]
+    pts = np.isfinite(z)
+    coefs = np.linalg.lstsq(np.stack([xx[pts], yy[pts], ones[pts]]).T, z[pts].flatten(), rcond=None)[0]
 
-    rows = np.arange(z.shape[0])
-    cols = np.arange(z.shape[1])
-    plane_fit = coefs[0] * cols - coefs[1] * rows + coefs[2]  # minus to make y axis positive upward, otherwise indices increases down the rows
+    plane_fit = coefs[0] * xx + coefs[1] * yy + coefs[2]
 
     # rotate axis
     range_coef = coefs[0] * np.cos(theta) + coefs[1] * np.sin(theta)
@@ -185,6 +176,8 @@ if __name__ == "__main__":
         # plot time series of ramp parameters
         plt.plot(imdates_dt, range_coef, label="range_coef")
         plt.plot(imdates_dt, azi_coef, label="azi_coef")
+        plt.xlabel("Epoch")
+        plt.ylabel("ramp rate unit/pixel")
         plt.title(args.cumfile)
         plt.savefig(args.cumfile + "_ramp_coefs.png")
         plt.close()
