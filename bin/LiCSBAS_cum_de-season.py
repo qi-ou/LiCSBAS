@@ -69,7 +69,7 @@ def plot_cum_grid(cum1, titles, suptitle, png):
         cum = np.ones(cum1.shape) * np.nan
         for i in np.arange(n_im):
             cum[i, :, :] = cum1[i, :, :] - cum1[i, length//2, width//2]
-            suptitle = suptitle + "_ref2center"
+        suptitle = suptitle + "_ref2center"
     else:
         cum = cum1
 
