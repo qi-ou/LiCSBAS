@@ -96,15 +96,11 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     plt.savefig(png, bbox_inches='tight')
     plt.close()
 
-def fit_plane(x, y, z, theta=0):
+def fit_plane(z, theta=0):
     """Fit a plane to data.
 
     Parameters
     ----------
-    x : `numpy.ndarray`
-        1D array of x (axis 1) values
-    y : `numpy.ndarray`
-        1D array of y (axis 0) values
     z : `numpy.ndarray`
         2D array of z values
 
@@ -114,17 +110,17 @@ def fit_plane(x, y, z, theta=0):
         array representation of plane
 
     """
-    pts = np.isfinite(z)
-    if len(z.shape) > 1:
-        x, y = np.meshgrid(x, y)
-        xx, yy = x[pts].flatten(), y[pts].flatten()
-    else:
-        xx, yy = x, y
+    indices = np.argwhere(np.isfinite(z))
+    yy = -indices.T[0]  # minus to make y axis positive upward, otherwise indices increases down the rows
+    xx = indices.T[1]
+    nonnan_z = z[np.isfinite(z)]
+    flat = np.ones(nonnan_z)
 
-    flat = np.ones(xx.shape)
+    coefs = np.linalg.lstsq(np.stack([xx, yy, flat]).T, nonnan_z.flatten(), rcond=None)[0]
 
-    coefs = np.linalg.lstsq(np.stack([xx, yy, flat]).T, z[pts].flatten(), rcond=None)[0]
-    plane_fit = coefs[0] * x + coefs[1] * y + coefs[2]
+    rows = np.arange(z.shape[0])
+    cols = np.arange(z.shape[1])
+    plane_fit = coefs[0] * cols - coefs[1] * rows + coefs[2]  # minus to make y axis positive upward, otherwise indices increases down the rows
 
     # rotate axis
     range_coef = coefs[0] * np.cos(theta) + coefs[1] * np.sin(theta)
@@ -181,7 +177,7 @@ if __name__ == "__main__":
         range_coefs = []
         azi_coefs = []
         for i in np.arange(n_im):
-            plane_fit, range_coef, azi_coef = fit_plane(np.arange(width), np.arange(length), cum[i, :, :], np.deg2rad(args.heading))
+            plane_fit, range_coef, azi_coef = fit_plane(cum[i, :, :], np.deg2rad(args.heading))
             ramp_cum[i, :, :] = plane_fit
             range_coefs.append(range_coef)
             azi_coefs.append(azi_coef)
