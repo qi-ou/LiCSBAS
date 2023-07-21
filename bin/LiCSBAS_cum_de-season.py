@@ -91,9 +91,9 @@ def plot_cum_grid(cum1, titles, suptitle, png):
         # print(i, row, col)
         im = ax[row, col].imshow(cum[i, :, :], vmin=vmin, vmax=vmax, cmap=SCM.roma.reversed())
         ax[row, col].set_title(titles[i])
-    plt.suptitle(suptitle, fontsize='x-large')
-    fig.colorbar(im, ax=ax, label="Displacement, mm")
+    plt.suptitle(suptitle, fontsize='xx-large')
     plt.tight_layout()
+    fig.colorbar(im, ax=ax, label="Displacement, mm")
     plt.savefig(png, bbox_inches='tight')
     plt.close()
 
