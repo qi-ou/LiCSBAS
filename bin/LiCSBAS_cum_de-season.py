@@ -181,7 +181,7 @@ if __name__ == "__main__":
         range_coefs = []
         azi_coefs = []
         for i in np.arange(n_im):
-            plane_fit, range_coef, azi_coef = fit_plane(np.arrange(length), np.arrange(width), cum[i, :, :], np.deg2rad(args.heading))
+            plane_fit, range_coef, azi_coef = fit_plane(np.arange(length), np.arange(width), cum[i, :, :], np.deg2rad(args.heading))
             ramp_cum[i, :, :] = plane_fit
             range_coefs.append(range_coef)
             azi_coefs.append(azi_coef)
