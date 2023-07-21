@@ -61,20 +61,12 @@ def finish():
     # print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
-def plot_cum_grid(cum1, titles, suptitle, png):
+def plot_cum_grid(cum, titles, suptitle, png):
     print("Plotting {}".format(png))
     # decide dimension of plotting grid
-    n_im = cum1.shape[0]
+    n_im = cum.shape[0]
     n_row = int(np.sqrt(n_im))
     n_col = int(np.ceil(n_im / n_row))
-
-    if args.ref:
-        cum = np.ones(cum1.shape) * np.nan
-        for i in np.arange(n_im):
-            cum[i, :, :] = cum1[i, :, :] - cum1[i, cum1.shape[1]//2, cum1.shape[2]//2]
-        suptitle = suptitle + "_ref2center"
-    else:
-        cum = cum1
 
     vmin_list = []
     vmax_list = []
@@ -140,6 +132,13 @@ if __name__ == "__main__":
     dt_cum = np.float32((np.array(imdates_dt) - imdates_dt[0]) / 365.25)
     epochs = ([dt.datetime.strptime(imd, '%Y%m%d') for imd in imdates])
 
+    if args.ref:
+        cum_ref = np.ones(cum.shape) * np.nan
+        for i in np.arange(n_im):
+            cum_ref[i, :, :] = cum[i, :, :] - cum[i, cum.shape[1]//2, cum.shape[2]//2]
+        plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + ".png")
+        cum = cum_ref
+
     if args.de_season:
         # read dt and amp from inputs and downsample
         delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
@@ -149,7 +148,6 @@ if __name__ == "__main__":
 
         # remove seasonal_cum from cum to get remaining cum
         print("Removing seasonal component...")
-
         seasonal_cum = np.zeros(cum.shape) * np.nan
         remain_cum = np.zeros(cum.shape) * np.nan
         print("New cubes created...")
@@ -183,6 +181,7 @@ if __name__ == "__main__":
         plt.savefig(args.cumfile + "_ramp_coefs.png")
         plt.close()
 
+        # plot ramp and flattened time series
         flat_cum = cum - ramp_cum
         ramp_cum[np.isnan(cum)] = np.nan
         plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
