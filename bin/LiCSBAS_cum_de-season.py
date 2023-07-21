@@ -84,7 +84,7 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     vmin = min(vmin_list)
     vmax = max(vmax_list)
 
-    fig, ax = plt.subplots(n_row, n_col, sharex='all', sharey='all', figsize=(2*n_col*width/length, 2*n_row))
+    fig, ax = plt.subplots(n_row, n_col, sharex='all', sharey='all', figsize=(n_col*width/length, n_row))
     for i in np.arange(n_im):
         row = i // n_col
         col = i % n_col
