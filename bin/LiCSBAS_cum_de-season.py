@@ -68,7 +68,6 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     if args.ref:
         cum = np.ones(cum1.shape) * np.nan
         for i in np.arange(n_im):
-            print(cum1.shape, i, length//2, width//2, cum1[i, length//2, width//2])
             cum[i, :, :] = cum1[i, :, :] - cum1[i, length//2, width//2]
             suptitle = suptitle + "_ref2center"
     else:
@@ -112,6 +111,7 @@ if __name__ == "__main__":
         delta_t = delta_t[::args.downsample,::args.downsample]
         amp = amp[::args.downsample,::args.downsample]
 
+    # downsample
     length = length // args.downsample
     width = width // args.downsample
     cum = cum[:, ::args.downsample, ::args.downsample]
