@@ -94,9 +94,9 @@ def plot_cum_grid(cum1, titles, suptitle, png):
         ax[row, col].set_title(titles[i])
     plt.suptitle(suptitle)
     plt.tight_layout()
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    fig.colorbar(im, cax=cax, label="Displacement, mm/yr")
+    # divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(im, ax=ax, label="Displacement, mm/yr")
     plt.savefig(png, bbox_inches='tight')
     plt.close()
 
