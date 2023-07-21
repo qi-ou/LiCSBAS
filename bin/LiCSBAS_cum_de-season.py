@@ -58,13 +58,19 @@ def finish():
 
 
 def plot_cum_grid(cum, titles, suptitle, png):
-    vmin = np.nanpercentile(cum[-1, :, :], 1)
-    vmax = np.nanpercentile(cum[-1, :, :], 99)
     print("Plotting {}".format(png))
     # decide dimension of plotting grid
     n_im = cum.shape[0]
     n_row = int(np.sqrt(n_im))
     n_col = int(np.ceil(n_im / n_row))
+
+    vmin_list = []
+    vmax_list = []
+    for i in np.arange(n_im):
+        vmin_list.append(np.nanpercentile(cum[i, :, :], 1))
+        vmax_list.append(np.nanpercentile(cum[i, :, :], 99))
+    vmin = min(vmin_list)
+    vmax = max(vmax_list)
 
     fig, ax = plt.subplots(n_row, n_col, sharex='all', sharey='all', figsize=(2*n_col*length/width, 2*n_row))
     for i in np.arange(n_im):
