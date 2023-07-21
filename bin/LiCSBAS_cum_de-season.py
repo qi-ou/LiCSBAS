@@ -173,8 +173,8 @@ if __name__ == "__main__":
             azi_coefs.append(azi_coef)
 
         # plot time series of ramp parameters
-        plt.plot(imdates_dt, range_coef, label="range_coef")
-        plt.plot(imdates_dt, azi_coef, label="azi_coef")
+        plt.plot(imdates_dt, range_coefs, label="range_coef")
+        plt.plot(imdates_dt, azi_coefs, label="azi_coef")
         plt.xlabel("Epoch")
         plt.ylabel("ramp rate unit/pixel")
         plt.title(args.cumfile)
