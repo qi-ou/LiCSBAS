@@ -58,17 +58,20 @@ def finish():
     # print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
-def plot_cum_grid(cum, titles, suptitle, png):
+def plot_cum_grid(cum1, titles, suptitle, png):
     print("Plotting {}".format(png))
     # decide dimension of plotting grid
-    n_im = cum.shape[0]
+    n_im = cum1.shape[0]
     n_row = int(np.sqrt(n_im))
     n_col = int(np.ceil(n_im / n_row))
 
     if args.ref:
+        cum = np.ones(cum1.shape)
         for i in np.arange(n_im):
-            cum[i, :, :] = cum[i, :, :] - cum[i, length//2, width//2]
+            cum[i, :, :] = cum1[i, :, :] - cum1[i, length//2, width//2]
             suptitle = suptitle + "_ref2center"
+    else:
+        cum = cum1
 
     vmin_list = []
     vmax_list = []
