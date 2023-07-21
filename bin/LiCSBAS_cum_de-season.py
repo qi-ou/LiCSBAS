@@ -93,7 +93,7 @@ def plot_cum_grid(cum1, titles, suptitle, png):
         ax[row, col].set_title(titles[i])
     plt.suptitle(suptitle, fontsize='xx-large')
     plt.tight_layout()
-    fig.colorbar(im, ax=ax, label="Displacement, mm")
+    fig.colorbar(im, ax=ax, label="Displacement, mm", fraction=0.05, pad=0.02)
     plt.savefig(png, bbox_inches='tight')
     plt.close()
 
