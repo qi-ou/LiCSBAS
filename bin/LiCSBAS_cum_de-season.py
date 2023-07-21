@@ -137,9 +137,9 @@ if __name__ == "__main__":
 
     # plot 3 cumulative displacement grids
     print("Plotting time series tiles...")
-    plot_cum_grid(cum, imdates, "Cumulative displacement", args.cumfile + ".png")
+    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
     if args.de_season:
-        plot_cum_grid(seasonal_cum, imdates, "Seasonal cumulative displacement", args.cumfile + ".seasonal.png")
-        plot_cum_grid(remain_cum, imdates, "De-seasoned cumulative displacement", args.cumfile + ".de-seasoned.png")
+        plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
+        plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
 
     finish()
