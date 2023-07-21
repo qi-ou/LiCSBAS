@@ -37,7 +37,10 @@ def init_args():
     parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
     parser.add_argument('-s', dest='de_season', default=False, action='store_true', help="remove seasonal component")
+    parser.add_argument('-p', dest='deramp', default=False, action='store_true', help="remove planar ramp")
     parser.add_argument('-r', dest='ref', default=False, action='store_true', help="reference to the center of the image")
+    parser.add_argument('--heading', type=float, default=0, choices=[-10, -170, 0], help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
+
     args = parser.parse_args()
 
 
@@ -93,6 +96,41 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     plt.savefig(png, bbox_inches='tight')
     plt.close()
 
+def fit_plane(x, y, z, theta=0):
+    """Fit a plane to data.
+
+    Parameters
+    ----------
+    x : `numpy.ndarray`
+        1D array of x (axis 1) values
+    y : `numpy.ndarray`
+        1D array of y (axis 0) values
+    z : `numpy.ndarray`
+        2D array of z values
+
+    Returns
+    -------
+    `numpy.ndarray`
+        array representation of plane
+
+    """
+    pts = np.isfinite(z)
+    if len(z.shape) > 1:
+        x, y = np.meshgrid(x, y)
+        xx, yy = x[pts].flatten(), y[pts].flatten()
+    else:
+        xx, yy = x, y
+
+    flat = np.ones(xx.shape)
+
+    coefs = np.linalg.lstsq(np.stack([xx, yy, flat]).T, z[pts].flatten(), rcond=None)[0]
+    plane_fit = coefs[0] * x + coefs[1] * y + coefs[2]
+
+    # rotate axis
+    range_coef = coefs[0] * np.cos(theta) + coefs[1] * np.sin(theta)
+    azi_coef = coefs[0] * -np.sin(theta) + coefs[1] * np.cos(theta)
+    return plane_fit, range_coef, azi_coef
+
 
 if __name__ == "__main__":
     start()
@@ -134,12 +172,34 @@ if __name__ == "__main__":
             for y in np.arange(length):
                 seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
                 remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
-
-    # plot 3 cumulative displacement grids
-    print("Plotting time series tiles...")
-    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
-    if args.de_season:
+        # plot cumulative displacement grids
         plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
         plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
+
+    if args.deramp:
+        ramp_cum = np.zeros((n_im, length, width)) * np.nan
+        range_coefs = []
+        azi_coefs = []
+        for i in np.arange(n_im):
+            plane_fit, range_coef, azi_coef = fit_plane(np.arrange(length), np.arrange(width), cum[i, :, :], np.deg2rad(args.heading))
+            ramp_cum[i, :, :] = plane_fit
+            range_coefs.append(range_coef)
+            azi_coefs.append(azi_coef)
+
+        # plot time series of ramp parameters
+        plt.plot(imdates_dt, range_coef, label="range_coef")
+        plt.plot(imdates_dt, azi_coef, label="azi_coef")
+        plt.title(args.cumfile)
+        plt.savefig(args.cumfile + "_ramp_coefs.png")
+        plt.close()
+
+        flat_cum = cum - ramp_cum
+        plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
+        plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
+
+
+    print("Plotting time series tiles...")
+    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
+
 
     finish()
