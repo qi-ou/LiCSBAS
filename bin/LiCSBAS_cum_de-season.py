@@ -71,7 +71,7 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     if args.ref:
         cum = np.ones(cum1.shape) * np.nan
         for i in np.arange(n_im):
-            cum[i, :, :] = cum1[i, :, :] - cum1[i, length//2, width//2]
+            cum[i, :, :] = cum1[i, :, :] - cum1[i, cum1.shape[1]//2, cum1.shape[2]//2]
         suptitle = suptitle + "_ref2center"
     else:
         cum = cum1
@@ -95,6 +95,7 @@ def plot_cum_grid(cum1, titles, suptitle, png):
     fig.colorbar(im, ax=ax, label="Displacement, mm/yr")
     plt.savefig(png, bbox_inches='tight')
     plt.close()
+
 
 def fit_plane(z, theta=0):
     """Fit a plane to data.
@@ -137,8 +138,6 @@ if __name__ == "__main__":
         amp = amp[::args.downsample,::args.downsample]
 
     # downsample
-    length = length // args.downsample
-    width = width // args.downsample
     cum = cum[:, ::args.downsample, ::args.downsample]
 
     ### Calc dt in year
@@ -150,13 +149,13 @@ if __name__ == "__main__":
         # remove seasonal_cum from cum to get remaining cum
         print("Removing seasonal component...")
 
-        seasonal_cum = np.zeros((n_im, length, width)) * np.nan
-        remain_cum = np.zeros((n_im, length, width)) * np.nan
+        seasonal_cum = np.zeros(cum.shape) * np.nan
+        remain_cum = np.zeros(cum.shape) * np.nan
         print("New cubes created...")
-        for x in np.arange(width):
-            if x % (width//10) == 0:
-                print("Processing {}0%".format(x // (width//10)))
-            for y in np.arange(length):
+        for x in np.arange(cum.shape[2]):
+            if x % (cum.shape[2]//10) == 0:
+                print("Processing {}0%".format(x // (cum.shape[2]//10)))
+            for y in np.arange(cum.shape[1]):
                 seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
                 remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
         # plot cumulative displacement grids
@@ -164,7 +163,7 @@ if __name__ == "__main__":
         plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
 
     if args.deramp:
-        ramp_cum = np.zeros((n_im, length, width)) * np.nan
+        ramp_cum = np.zeros(cum.shape) * np.nan
         range_coefs = []
         azi_coefs = []
         for i in np.arange(n_im):
