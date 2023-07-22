@@ -15,6 +15,7 @@ import SCM
 import time
 import os
 import sys
+import statsmodels.api as sm
 
 # changelog
 ver = "1.0"; date = 20230605; author = "Qi Ou, ULeeds"  # removes the seasonal components from a time series cube and plot
@@ -40,6 +41,7 @@ def init_args():
     parser.add_argument('-p', dest='deramp', default=False, action='store_true', help="remove planar ramp")
     parser.add_argument('-r', dest='ref', default=False, action='store_true', help="reference to the center of the image")
     parser.add_argument('--heading', type=float, default=0, choices=[-10, -170, 0], help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
+    parser.add_argument('--plot_cum', default=False, action='store_true', help="plot 2D time series")
 
     args = parser.parse_args()
 
@@ -118,14 +120,15 @@ if __name__ == "__main__":
     init_args()
 
     # read input cum.h5
-    cumh5 = h5.File(args.cumfile,'r')
+    cumh5 = h5.File(args.cumfile,'a')
     imdates = cumh5['imdates'][()].astype(str).tolist()
     cum = cumh5['cum']
     n_im, length, width = cum.shape
 
     # downsample
     cum = cum[:, ::args.downsample, ::args.downsample]
-    plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
+    if args.plot_cum:
+        plot_cum_grid(cum, imdates, args.cumfile, args.cumfile + ".png")
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
@@ -136,7 +139,8 @@ if __name__ == "__main__":
         cum_ref = np.ones(cum.shape) * np.nan
         for i in np.arange(n_im):
             cum_ref[i, :, :] = cum[i, :, :] - cum[i, cum.shape[1]//2, cum.shape[2]//2]
-        plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
+        if args.plot_cum:
+            plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
         cum = cum_ref
 
     if args.de_season:
@@ -158,8 +162,9 @@ if __name__ == "__main__":
                 seasonal_cum[:, y, x] = amp[y, x]*np.cos(2*np.pi*(dt_cum - delta_t[y, x]/365.26))
                 remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
         # plot cumulative displacement grids
-        plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
-        plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
+        if args.plot_cum:
+            plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
+            plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
 
     if args.deramp:
         ramp_cum = np.zeros(cum.shape) * np.nan
@@ -171,20 +176,47 @@ if __name__ == "__main__":
             range_coefs.append(range_coef)
             azi_coefs.append(azi_coef)
 
-        # plot time series of ramp parameters
-        plt.plot(epochs, range_coefs, label="range_coef")
-        plt.plot(epochs, azi_coefs, label="azi_coef")
-        plt.xlabel("Epoch")
-        plt.ylabel("ramp rate unit/pixel")
-        plt.title(args.cumfile)
-        plt.legend()
-        plt.savefig(args.cumfile + "_ramp_coefs.png")
-        plt.close()
-
         # plot ramp and flattened time series
         flat_cum = cum - ramp_cum
+        flat_std = np.array([np.nanstd(flat_cum[i, :, :]) for i in np.arange(n_im)])
         ramp_cum[np.isnan(cum)] = np.nan
-        plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
-        plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
+        if args.plot_cum:
+            plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
+            plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
 
+        # calculate std of flattened cum displacement
+        flat_std = np.array([np.nanstd(flat_cum[i, :, :]) for i in np.arange(n_im)])
+        flat_std[0] = np.std(flat_std)  # to avoid 0 weight for the first epoch
+        # model ramp coef time series with weighted least squares with seasonal and linear terms
+        weights = 1 / flat_std ** 2
+        sin = np.sin(2 * np.pi * dt_cum)
+        cos = np.cos(2 * np.pi * dt_cum)
+        X = np.vstack([dt_cum, sin, cos, np.ones_like(dt_cum)]).transpose()
+        Y = np.vstack([range_coefs, azi_coefs]).transpose()
+        wlsfit = sm.WLS(Y, X, weights=weights).fit()
+
+        # plot time series of ramp parameters
+        fig, [ax1, ax2, ax3] = plt.subplots(3, figsize=(8, 8), sharex='all')
+        ax1.scatter(epochs, range_coefs, s=200 * weights, label="range_coef_weights")
+        ax1.scatter(epochs, azi_coefs, s=200 * weights, label="azi_coef_weights")
+        ax1.plot(epochs, range_coefs)
+        ax1.plot(epochs, azi_coefs)
+        ax1.plot(epochs, wlsfit.fittedvalues, label='wls.model')
+        ax2.plot(epochs, wlsfit.resid, label='wls.resid')
+        ax3.plot(epochs, flat_std, label="flat_std", color='C2')
+        ax1.set_ylabel("Ramp rate, unit/pixel")
+        ax2.set_ylabel("Residual ramp rate, unit/pixel")
+        ax3.set_ylabel("Std of flattened displacement")
+        ax3.set_xlabel("Epoch")
+        ax1.set_title(args.cumfile)
+        ax1.legend()
+        ax2.legend()
+        ax3.legend()
+        plt.tight_layout()
+        plt.savefig(args.cumfile + "_ramp_coefs_resid_flat_std.png")
+        plt.close()
+
+        cumh5.create_dataset('flat_std', data=flat_std, compression='gzip')
+
+    cumh5.close()
     finish()
