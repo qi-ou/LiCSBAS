@@ -213,7 +213,7 @@ def calc_vel_and_err(cum, G, sig):
 
     # identify pixels with data to solve
     has_data = np.any(~np.isnan(cum), axis=0)
-    data = cum[:, has_data]
+    data = cum[()].reshape(n_im, cum[0].size)[:, has_data.ravel()]  # [()] to expose array under HDF5 dataset "cum", use ravel() because fancy indexing is only allowed on 1D arrays
     result = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
     stderr = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
 
