@@ -131,8 +131,9 @@ def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights
     """
     # plot time series of ramp parameters
     fig, [ax1, ax2, ax3] = plt.subplots(3, figsize=(8, 8), sharex='all')
-    ax1.scatter(epochs, range_coefs, s=200 * weights, label="range_coef_weights")
-    ax1.scatter(epochs, azi_coefs, s=200 * weights, label="azi_coef_weights")
+    size_scale = 5 / np.std(weights)
+    ax1.scatter(epochs, range_coefs, s=size_scale * weights, label="range_coef_weights")
+    ax1.scatter(epochs, azi_coefs, s=size_scale * weights, label="azi_coef_weights")
     ax1.plot(epochs, range_coefs)
     ax1.plot(epochs, azi_coefs)
     ax1.plot(epochs, wlsfit.fittedvalues, label='wls.model')
