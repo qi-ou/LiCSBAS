@@ -264,6 +264,8 @@ if __name__ == "__main__":
     cumh5 = h5.File(args.cumfile, 'r')
     imdates = cumh5['imdates'][()].astype(str).tolist()
     cum = cumh5['cum']
+    if args.plot_cum:
+        plot_cum_grid(cum[:, ::args.downsample, ::args.downsample], imdates, args.cumfile, args.cumfile + ".png")
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
@@ -276,7 +278,7 @@ if __name__ == "__main__":
         for i in np.arange(n_im):
             cum_ref[i, :, :] = cum[i, :, :] - cum[i, cum.shape[1] // 2, cum.shape[2] // 2]
         if args.plot_cum:
-            plot_cum_grid(cum_ref, imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
+            plot_cum_grid(cum_ref[:, ::args.downsample, ::args.downsample], imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
         cum = cum_ref
 
     # if args.de_season:
@@ -335,7 +337,6 @@ if __name__ == "__main__":
         # plot 3D time series
         if args.plot_cum:
             ramp_cum[np.isnan(small_cum)] = np.nan
-            plot_cum_grid(small_cum, imdates, args.cumfile, args.cumfile + ".png")
             plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
             plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
 
