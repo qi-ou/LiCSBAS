@@ -352,8 +352,8 @@ if __name__ == "__main__":
         # save linear velocity
         vel = result_cube[1]
         vstd = stderr_cube[1]
-        vel.tofile('vel')
-        vstd.tofile('vstd')
+        vel.tofile('{}_vel'.format(args.cumfile))
+        vstd.tofile('{}_vstd'.format(args.cumfile))
         plot_lib.make_im_png(vel, '{}_vel.png'.format(args.cumfile), SCM.roma.reversed(), 'vel {}'.format(args.cumfile))
         plot_lib.make_im_png(vstd, '{}_vstd.png'.format(args.cumfile), 'viridis', 'vstd {}'.format(args.cumfile))
 
@@ -370,8 +370,8 @@ if __name__ == "__main__":
             delta_t[delta_t < 0] = delta_t[delta_t < 0] + 365.25  # 0-365.25
             delta_t[delta_t > 365.25] = delta_t[delta_t > 365.25] - 365.25
 
-            amp.tofile('amp')
-            delta_t.tofile('delta_t')
+            amp.tofile('{}_amp'.format(args.cumfile))
+            delta_t.tofile('{}_delta_t'.format(args.cumfile))
             amp_max = np.nanpercentile(amp, 99)
             plot_lib.make_im_png(amp, '{}_amp.png'.format(args.cumfile), 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
             plot_lib.make_im_png(delta_t, '{}_delta_t.png'.format(args.cumfile), SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
