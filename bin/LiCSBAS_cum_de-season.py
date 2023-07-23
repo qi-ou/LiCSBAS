@@ -375,7 +375,7 @@ if __name__ == "__main__":
             plot_lib.make_im_png(delta_t, 'delta_t.png', SCM.romaO.reversed(), 'delta_t')
 
         if args.plot_cum:
-            plot_cum_grid(small_cum[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
+            plot_cum_grid(resid_cube[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
 
     cumh5.close()
     finish()
