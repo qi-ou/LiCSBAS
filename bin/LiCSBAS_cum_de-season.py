@@ -328,7 +328,7 @@ if __name__ == "__main__":
             plot_cum_grid(ramp_cum, imdates, "Best-fit ramps {}".format(args.cumfile), args.cumfile + "_ramps.png")
             plot_cum_grid(flat_cum, imdates, "Flattened {}".format(args.cumfile), args.cumfile + "_flattened.png")
 
-    if args.vel:
+    if args.linear:
         ### Weighted Least Squares Inversion
         G = make_G(dt_cum)
         try:
