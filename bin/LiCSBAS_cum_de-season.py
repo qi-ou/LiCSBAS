@@ -73,7 +73,7 @@ def finish():
 def plot_cum_grid(cum, imdates, suptitle, png):
     print("Plotting {}".format(png))
     # decide dimension of plotting grid
-    n_im = cum.shape[0]
+    n_im, length, width = cum.shape
     n_row = int(np.sqrt(n_im))
     n_col = int(np.ceil(n_im / n_row))
 
