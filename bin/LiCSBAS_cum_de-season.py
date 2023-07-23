@@ -208,8 +208,8 @@ def calc_vel_and_err(cum, G, sig):
     standard_errors : n_para x length x width
     """
     # initialise
-    result_cube = np.zeros(G.shape[1], cum[0].shape, dtype=np.float32) * np.nan
-    stderr_cube = np.zeros(G.shape[1], cum[0].shape, dtype=np.float32) * np.nan
+    result_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
+    stderr_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
 
     # identify pixels with data to solve
     has_data = np.any(~np.isnan(cum), axis=0)
