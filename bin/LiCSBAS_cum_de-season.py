@@ -122,7 +122,7 @@ def fit_plane(z, theta=0):
     return plane_fit, range_coef, azi_coef
 
 
-def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, wlsfit):
+def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, coef_resid, sig, wlsfit):
     """
     Plot 3 panels.
     Top: time series of ramp coefs weighted least square modeled.
@@ -138,6 +138,9 @@ def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights
     ax1.plot(epochs, wlsfit.fittedvalues, label='wls.model')
     ax2.plot(epochs, wlsfit.resid, label='wls.resid')
     ax3.plot(epochs, flat_std, label="flat_std", color='C2')
+    ax3.plot(epochs, coef_resid, label="scaled_coef_resid", color='C3')
+    ax3.plot(epochs, sig, label="sig", color='C4')
+
     ax1.set_ylabel("Ramp rate, unit/pixel")
     ax2.set_ylabel("Residual ramp rate, unit/pixel")
     ax3.set_ylabel("Std of flattened displacement")
@@ -169,7 +172,7 @@ def wls_batch(d, G, sig):
     cov_d = np.diag(np.square(sig).transpose())
     cov_m = np.linalg.inv(np.dot(np.dot(G.transpose(), np.linalg.inv(cov_d)), G))
     param_errors = np.sqrt(np.outer(np.diag(cov_m), reduced_chi_square))
-    return wlsfit.params, param_errors
+    return wlsfit.params, param_errors, wlsfit.resid
 
 
 def wls_pixel_wise(d, G, sig):
@@ -184,16 +187,21 @@ def wls_pixel_wise(d, G, sig):
     """
     params = np.zeros((G.shape[1], d.shape[1]))
     errors = np.zeros((G.shape[1], d.shape[1]))
+    res = np.zeros(d.shape)
+
     for i in np.arange(d.shape[1]):
         try:
             # weighted least squares inversion
             wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
             params[:, i] = wlsfit.params
             errors[:, i] = wlsfit.bse
+            res[:, i] = wlsfit.resid
         except:
             params[:, i] = np.nan
             errors[:, i] = np.nan
-    return params, errors
+            res[:, i] = np.nan
+
+    return params, errors, res
 
 
 def calc_vel_and_err(cum, G, sig):
@@ -210,12 +218,14 @@ def calc_vel_and_err(cum, G, sig):
     # initialise
     result_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
     stderr_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
+    resid_cube = np.zeros(cum.shape, dtype=np.float32) * np.nan
 
     # identify pixels with data to solve
     has_data = np.any(~np.isnan(cum), axis=0)
     data = cum[()].reshape(n_im, cum[0].size)[:, has_data.ravel()]  # [()] to expose array under HDF5 dataset "cum", use ravel() because fancy indexing is only allowed on 1D arrays
     result = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
     stderr = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
+    resid = np.zeros(data.shape, dtype=np.float32) * np.nan
 
     # solve pixels with full data and partial data separately
     full = np.all(~np.isnan(data), axis=0)
@@ -223,20 +233,17 @@ def calc_vel_and_err(cum, G, sig):
     if n_pt_full != 0:
         print('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]), flush=True)
         d = data[:, full]
-        params, errors = wls_batch(d, G, sig)
-        result[:, full] = params
-        stderr[:, full] = errors
-    print('  Solve {} points with nans point-by-point...'.format(np.sum(~full)), flush=True)
+        result[:, full], stderr[:, full], resid[:, full] = wls_batch(d, G, sig)
+    print('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
     d = data[:, ~full]
-    params, errors = wls_pixel_wise(d, G, sig)
-    result[:, ~full] = params
-    stderr[:, ~full] = errors
+    result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
 
     # place model and errors into cube
     result_cube[:, has_data] = result
     stderr_cube[:, has_data] = stderr
+    resid_cube[:, has_data] = resid
 
-    return result_cube, stderr_cube
+    return result_cube, stderr_cube, resid_cube
 
 
 def make_G(dt_cum):
@@ -319,7 +326,11 @@ if __name__ == "__main__":
         G = make_G(dt_cum)
         d = np.vstack([range_coefs, azi_coefs]).transpose()
         wlsfit = sm.WLS(d, G, weights=weights).fit()
-        plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, wlsfit)
+
+        vector_ramp_coef_resid = np.sqrt(np.sum(np.square(wlsfit.resid), axis=1))
+        vector_ramp_coef_resid_scaled = np.std(flat_std) / np.std(vector_ramp_coef_resid) * vector_ramp_coef_resid
+        sig = flat_std + vector_ramp_coef_resid_scaled
+        plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, vector_ramp_coef_resid_scaled, sig, wlsfit)
 
         # plot 3D time series
         if args.plot_cum:
@@ -331,11 +342,10 @@ if __name__ == "__main__":
     if args.linear:
         ### Weighted Least Squares Inversion
         G = make_G(dt_cum)
-        try:
-            sig = flat_std
-        except:
-            sig = np.ones_like(dt_cum)
-        result_cube, stderr_cube = calc_vel_and_err(cum, G, sig)
+        if args.ramp:
+            result_cube, stderr_cube, resid_cube = calc_vel_and_err(cum, G, sig)
+        else:
+            result_cube, stderr_cube, resid_cube = calc_vel_and_err(cum, G, np.ones_like(dt_cum))
 
         # save linear velocity
         vel = result_cube[1]
@@ -364,6 +374,8 @@ if __name__ == "__main__":
             plot_lib.make_im_png(amp, 'amp.png', 'viridis', 'amp', vmin=0, vmax=amp_max)
             plot_lib.make_im_png(delta_t, 'delta_t.png', SCM.romaO.reversed(), 'delta_t')
 
+        if args.plot_cum:
+            plot_cum_grid(small_cum[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
 
     cumh5.close()
     finish()
