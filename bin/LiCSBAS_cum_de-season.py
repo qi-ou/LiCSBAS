@@ -354,8 +354,8 @@ if __name__ == "__main__":
         vstd = stderr_cube[1]
         vel.tofile('vel')
         vstd.tofile('vstd')
-        plot_lib.make_im_png(vel, 'vel.png', SCM.roma.reversed(), 'vel {}'.format(args.cumfile))
-        plot_lib.make_im_png(vstd, 'vstd.png', 'viridis', 'vstd {}'.format(args.cumfile))
+        plot_lib.make_im_png(vel, '{}_vel.png'.format(args.cumfile), SCM.roma.reversed(), 'vel {}'.format(args.cumfile))
+        plot_lib.make_im_png(vstd, '{}_vstd.png'.format(args.cumfile), 'viridis', 'vstd {}'.format(args.cumfile))
 
         if args.season:
             coef_s = result_cube[2]
@@ -373,8 +373,8 @@ if __name__ == "__main__":
             amp.tofile('amp')
             delta_t.tofile('delta_t')
             amp_max = np.nanpercentile(amp, 99)
-            plot_lib.make_im_png(amp, 'amp.png', 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
-            plot_lib.make_im_png(delta_t, 'delta_t.png', SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
+            plot_lib.make_im_png(amp, '{}_amp.png'.format(args.cumfile), 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
+            plot_lib.make_im_png(delta_t, '{}_delta_t.png'.format(args.cumfile), SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
 
         if args.plot_cum:
             plot_cum_grid(resid_cube[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
