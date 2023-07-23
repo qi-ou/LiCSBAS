@@ -191,6 +191,9 @@ def wls_pixel_wise(d, G, sig):
     res = np.zeros(d.shape)
 
     for i in np.arange(d.shape[1]):
+        if d.shape[1] > 100 :
+            if i % int(d.shape[1]/10) == 0:
+                print("Solving {}% ...".format(10*i // int(d.shape[1]/10)))
         try:
             # weighted least squares inversion
             wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
@@ -235,6 +238,7 @@ def calc_vel_and_err(cum, G, sig):
         print('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]), flush=True)
         d = data[:, full]
         result[:, full], stderr[:, full], resid[:, full] = wls_batch(d, G, sig)
+
     print('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
     d = data[:, ~full]
     result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
