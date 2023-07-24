@@ -200,7 +200,7 @@ def wls_pixel_wise(d, G, sig):
     for i in np.arange(d.shape[1]):
         if d.shape[1] > 1000:
             if i % 100 == 0:
-                print("{}  Solving {} / {} pixels".format(multi.current_process().name, i, d.shape[1]), end="\r")
+                print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
         try:
             # weighted least squares inversion
             wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
