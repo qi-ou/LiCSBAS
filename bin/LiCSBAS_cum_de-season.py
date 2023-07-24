@@ -126,7 +126,7 @@ def fit_plane(z, theta=0):
     return plane_fit, range_coef, azi_coef
 
 
-def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, coef_resid, sig, wlsfit):
+def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, detrended_flat_std, weights, coef_resid, sig, wlsfit):
     """
     Plot 3 panels.
     Top: time series of ramp coefs weighted least square modeled.
@@ -143,6 +143,7 @@ def plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights
     ax1.plot(epochs, wlsfit.fittedvalues, label='wls.model')
     ax2.plot(epochs, wlsfit.resid, label='wls.resid')
     ax3.plot(epochs, flat_std, label="flat_std", color='C2')
+    ax3.plot(epochs, detrended_flat_std, label="detrended_flat_std", color='C2', linestyle='dashed')
     ax3.plot(epochs, coef_resid, label="scaled_coef_resid", color='C3')
     ax3.plot(epochs, sig, label="sig", color='C4')
 
@@ -363,8 +364,14 @@ if __name__ == "__main__":
         # calculate std of flattened cum displacement to use as weights
         flat_cum = small_cum - ramp_cum
         flat_std = np.array([np.nanstd(flat_cum[i, :, :]) for i in np.arange(n_im)])
-        flat_std[0] = np.nanmean(flat_std)  # to avoid 0 weight for the first epoch
-        weights = 1 / flat_std ** 2
+        flat_std[0] = flat_std[1]  # to avoid 0 weight for the first epoch
+
+        # remove a linear trend from flat_std because std increases over time due to real signal
+        G = np.vstack([np.ones_like(dt_cum), dt_cum]).transpose()
+        olsfit = sm.OLS(flat_std.transpose(), G).fit()
+        detrended_flat_std = flat_std - olsfit.fittedvalues + olsfit.fittedvalues[0]
+
+        weights = 1 / detrended_flat_std ** 2
 
         # model and plot ramp coefs time series
         G = make_G(dt_cum)
@@ -373,8 +380,8 @@ if __name__ == "__main__":
 
         vector_ramp_coef_resid = np.sqrt(np.sum(np.square(wlsfit.resid), axis=1))
         vector_ramp_coef_resid_scaled = np.std(flat_std) / np.std(vector_ramp_coef_resid) * vector_ramp_coef_resid
-        sig = flat_std + vector_ramp_coef_resid_scaled
-        plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, weights, vector_ramp_coef_resid_scaled, sig, wlsfit)
+        sig = detrended_flat_std + vector_ramp_coef_resid_scaled
+        plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, detrended_flat_std, weights, vector_ramp_coef_resid_scaled, sig, wlsfit)
 
         # plot 3D time series
         if args.plot_cum:
