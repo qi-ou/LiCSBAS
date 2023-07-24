@@ -265,16 +265,16 @@ def calc_vel_and_err(cum, G, sig):
     full = np.all(~np.isnan(data), axis=0)
     n_pt_full = full.sum()
     if n_pt_full != 0:
-        logger.info('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]), flush=True)
+        logger.info('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]))
         d = data[:, full]
         result[:, full], stderr[:, full], resid[:, full] = wls_batch(d, G, sig)
 
     d = data[:, ~full]
     if sum(~full) > 500:
-        logger.info('  Solve {} points with nans point-by-point in parallel...'.format(sum(~full)), flush=True)
+        logger.info('  Solve {} points with nans point-by-point in parallel...'.format(sum(~full)))
         result[:, ~full], stderr[:, ~full], resid[:, ~full] = parallel_wls_pixel_wise(d, G, sig)
     else:
-        logger.info('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
+        logger.info('  Solve {} points with nans point-by-point...'.format(sum(~full)))
         result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
 
     # place model and errors into cube
