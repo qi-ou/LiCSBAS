@@ -370,6 +370,8 @@ if __name__ == "__main__":
         G = np.vstack([np.ones_like(dt_cum), dt_cum]).transpose()
         olsfit = sm.OLS(flat_std.transpose(), G).fit()
         detrended_flat_std = flat_std - olsfit.fittedvalues + olsfit.fittedvalues[0]
+        if np.nanmin(detrended_flat_std) < 0:  # to make sure all weights are safely above 0
+            detrended_flat_std = detrended_flat_std - np.nanmin(detrended_flat_std) + np.nanstd(detrended_flat_std)
 
         weights = 1 / detrended_flat_std ** 2
 
