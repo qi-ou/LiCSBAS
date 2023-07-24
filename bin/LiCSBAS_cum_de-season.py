@@ -249,6 +249,8 @@ def calc_vel_and_err(cum, G, sig):
     inverted_params : n_para x length x width
     standard_errors : n_para x length x width
     """
+    logger.info('Estimating velocity from cumulative displacement...')
+
     # initialise
     result_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
     stderr_cube = np.zeros((G.shape[1], cum.shape[1], cum.shape[2]), dtype=np.float32) * np.nan
