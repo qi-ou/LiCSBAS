@@ -16,6 +16,7 @@ import time
 import os
 import sys
 import statsmodels.api as sm
+import multiprocessing as multi
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(levelname)s -- %(message)s')
 logger = logging.getLogger('pre_co_post_seismic.log')
@@ -189,6 +190,8 @@ def wls_pixel_wise(d, G, sig):
     @return:
     inverted_params : n_para x n_pt
     standard_errors : n_para x n_pt
+    residual_cube : n_im x n_pt
+
     """
     params = np.zeros((G.shape[1], d.shape[1]))
     errors = np.zeros((G.shape[1], d.shape[1]))
@@ -197,7 +200,7 @@ def wls_pixel_wise(d, G, sig):
     for i in np.arange(d.shape[1]):
         if d.shape[1] > 1000:
             if i % 100 == 0:
-                print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
+                print("{}  Solving {} / {} pixels".format(multi.current_process().name, i, d.shape[1]), end="\r")
         try:
             # weighted least squares inversion
             wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
@@ -213,7 +216,6 @@ def wls_pixel_wise(d, G, sig):
 
 
 def parallel_wls_pixel_wise(d, G, sig):
-    import multiprocessing as multi
     from functools import partial
 
     try:
@@ -223,15 +225,17 @@ def parallel_wls_pixel_wise(d, G, sig):
 
     # slicing cubes for multi-processing
     if threads > 1:
-        d_slices = np.array_split(d, threads)
+        d_slices = np.array_split(d, threads, axis=1)
         pool = multi.Pool(processes=threads)
         run_wls_pixel_wise = partial(wls_pixel_wise, G=G, sig=sig)
         result_slices = pool.map(run_wls_pixel_wise, d_slices)
-        result = np.concatenate(result_slices, axis=0)
+        params = np.concatenate(list(zip(*result_slices))[0], axis=1)
+        errors = np.concatenate(list(zip(*result_slices))[1], axis=1)
+        res = np.concatenate(list(zip(*result_slices))[2], axis=1)
         logger.info("Result concatenation done...")
     else:
-        result = wls_pixel_wise(d, G, sig)
-    return result
+        params, errors, res = wls_pixel_wise(d, G, sig)
+    return params, errors, res
 
 
 def calc_vel_and_err(cum, G, sig):
