@@ -16,7 +16,9 @@ import time
 import os
 import sys
 import statsmodels.api as sm
-import LiCSBAS_plot_lib as plot_lib
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(levelname)s -- %(message)s')
+logger = logging.getLogger('pre_co_post_seismic.log')
 
 # changelog
 ver = "1.0";
@@ -50,6 +52,8 @@ def init_args():
     parser.add_argument('--heading', type=float, default=0, choices=[-10, -170, 0],
                         help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
     parser.add_argument('--plot_cum', default=False, action='store_true', help="plot 3D time series")
+    parser.add_argument('--plot_vel', default=False, action='store_true', help="plot vel components and uncertainties")
+
     args = parser.parse_args()
 
 
@@ -191,9 +195,9 @@ def wls_pixel_wise(d, G, sig):
     res = np.zeros(d.shape)
 
     for i in np.arange(d.shape[1]):
-        if d.shape[1] > 1000 :
+        if d.shape[1] > 1000:
             if i % 100 == 0:
-                print("Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
+                print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
         try:
             # weighted least squares inversion
             wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
@@ -206,6 +210,28 @@ def wls_pixel_wise(d, G, sig):
             res[:, i] = np.nan
 
     return params, errors, res
+
+
+def parallel_wls_pixel_wise(d, G, sig):
+    import multiprocessing as multi
+    from functools import partial
+
+    try:
+        threads = min(len(os.sched_getaffinity(0)), 8)  # maximum use 8 cores
+    except:
+        threads = multi.cpu_count()
+
+    # slicing cubes for multi-processing
+    if threads > 1:
+        d_slices = np.array_split(d, threads)
+        pool = multi.Pool(processes=threads)
+        run_wls_pixel_wise = partial(wls_pixel_wise, G=G, sig=sig)
+        result_slices = pool.map(run_wls_pixel_wise, d_slices)
+        result = np.concatenate(result_slices, axis=0)
+        logger.info("Result concatenation done...")
+    else:
+        result = wls_pixel_wise(d, G, sig)
+    return result
 
 
 def calc_vel_and_err(cum, G, sig):
@@ -241,7 +267,10 @@ def calc_vel_and_err(cum, G, sig):
 
     print('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
     d = data[:, ~full]
-    result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
+    if sum(~full) > 500:
+        result[:, ~full], stderr[:, ~full], resid[:, ~full] = parallel_wls_pixel_wise(d, G, sig)
+    else:
+        result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
 
     # place model and errors into cube
     result_cube[:, has_data] = result
@@ -326,7 +355,7 @@ if __name__ == "__main__":
         # calculate std of flattened cum displacement to use as weights
         flat_cum = small_cum - ramp_cum
         flat_std = np.array([np.nanstd(flat_cum[i, :, :]) for i in np.arange(n_im)])
-        flat_std[0] = np.nanstd(flat_std)  # to avoid 0 weight for the first epoch
+        flat_std[0] = np.nanmean(flat_std)  # to avoid 0 weight for the first epoch
         weights = 1 / flat_std ** 2
 
         # model and plot ramp coefs time series
@@ -358,8 +387,10 @@ if __name__ == "__main__":
         vstd = stderr_cube[1]
         vel.tofile('{}_vel'.format(args.cumfile))
         vstd.tofile('{}_vstd'.format(args.cumfile))
-        plot_lib.make_im_png(vel, '{}_vel.png'.format(args.cumfile), SCM.roma.reversed(), 'vel {}'.format(args.cumfile))
-        plot_lib.make_im_png(vstd, '{}_vstd.png'.format(args.cumfile), 'viridis', 'vstd {}'.format(args.cumfile))
+        if args.plot_vel:
+            import LiCSBAS_plot_lib as plot_lib
+            plot_lib.make_im_png(vel, '{}_vel.png'.format(args.cumfile), SCM.roma.reversed(), 'vel {}'.format(args.cumfile))
+            plot_lib.make_im_png(vstd, '{}_vstd.png'.format(args.cumfile), 'viridis', 'vstd {}'.format(args.cumfile))
 
         if args.season:
             coef_s = result_cube[2]
@@ -377,8 +408,9 @@ if __name__ == "__main__":
             amp.tofile('{}_amp'.format(args.cumfile))
             delta_t.tofile('{}_delta_t'.format(args.cumfile))
             amp_max = np.nanpercentile(amp, 99)
-            plot_lib.make_im_png(amp, '{}_amp.png'.format(args.cumfile), 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
-            plot_lib.make_im_png(delta_t, '{}_delta_t.png'.format(args.cumfile), SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
+            if args.plot_vel:
+                plot_lib.make_im_png(amp, '{}_amp.png'.format(args.cumfile), 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
+                plot_lib.make_im_png(delta_t, '{}_delta_t.png'.format(args.cumfile), SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
 
         if args.plot_cum:
             plot_cum_grid(resid_cube[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
