@@ -16,7 +16,6 @@ import time
 import os
 import sys
 import statsmodels.api as sm
-import multiprocessing as multi
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(levelname)s -- %(message)s')
 logger = logging.getLogger('pre_co_post_seismic.log')
@@ -217,6 +216,7 @@ def wls_pixel_wise(d, G, sig):
 
 def parallel_wls_pixel_wise(d, G, sig):
     from functools import partial
+    import multiprocessing as multi
 
     try:
         threads = min(len(os.sched_getaffinity(0)), 8)  # maximum use 8 cores
@@ -265,15 +265,16 @@ def calc_vel_and_err(cum, G, sig):
     full = np.all(~np.isnan(data), axis=0)
     n_pt_full = full.sum()
     if n_pt_full != 0:
-        print('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]), flush=True)
+        logger.info('  Solving {}/{} points with full data together...'.format(n_pt_full, data.shape[1]), flush=True)
         d = data[:, full]
         result[:, full], stderr[:, full], resid[:, full] = wls_batch(d, G, sig)
 
-    print('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
     d = data[:, ~full]
     if sum(~full) > 500:
+        logger.info('  Solve {} points with nans point-by-point in parallel...'.format(sum(~full)), flush=True)
         result[:, ~full], stderr[:, ~full], resid[:, ~full] = parallel_wls_pixel_wise(d, G, sig)
     else:
+        logger.info('  Solve {} points with nans point-by-point...'.format(sum(~full)), flush=True)
         result[:, ~full], stderr[:, ~full], resid[:, ~full] = wls_pixel_wise(d, G, sig)
 
     # place model and errors into cube
@@ -344,6 +345,7 @@ if __name__ == "__main__":
     #         plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
 
     if args.ramp:
+        logger.info("Estimating a planar ramp per epoch...")
         # downsample
         small_cum = cum[:, ::args.downsample, ::args.downsample]
 
