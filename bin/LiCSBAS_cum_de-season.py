@@ -265,7 +265,7 @@ def calc_vel_and_err(cum, G, sig):
     has_full_data = np.all(~np.isnan(cum), axis=0)
     data_completeness = has_data + has_full_data
     data_completeness[data_completeness==0] = np.nan
-    plt.imshow(data_completeness, cmap=cm.tab10)
+    plt.imshow(data_completeness) #, cmap=cm.tab10
     plt.colorbar()
     plt.savefig('{}_data_completeness.png'.format(args.cumfile))
 
