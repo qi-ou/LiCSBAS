@@ -259,6 +259,14 @@ def calc_vel_and_err(cum, G, sig):
 
     # identify pixels with data to solve
     has_data = np.any(~np.isnan(cum), axis=0)
+
+    # identify locations of pixels with data but also with nans in the time series
+    has_full_data = np.all(~np.isnan(cum), axis=0)
+    data_completeness = has_data + has_full_data
+    plt.plot(data_completeness)
+    plt.colorbar()
+    plt.savefig('{}_data_completeness.png'.format(args.cumfile))
+
     data = cum[()].reshape(n_im, cum[0].size)[:, has_data.ravel()]  # [()] to expose array under HDF5 dataset "cum", use ravel() because fancy indexing is only allowed on 1D arrays
     result = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
     stderr = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
@@ -382,7 +390,7 @@ if __name__ == "__main__":
 
         vector_ramp_coef_resid = np.sqrt(np.sum(np.square(wlsfit.resid), axis=1))
         vector_ramp_coef_resid_scaled = np.std(flat_std) / np.std(vector_ramp_coef_resid) * vector_ramp_coef_resid
-        sig = detrended_flat_std + vector_ramp_coef_resid_scaled
+        sig = np.sqrt(detrended_flat_std**2 + vector_ramp_coef_resid_scaled**2)
         plot_ramp_coef_time_series(epochs, range_coefs, azi_coefs, flat_std, detrended_flat_std, weights, vector_ramp_coef_resid_scaled, sig, wlsfit)
 
         # plot 3D time series
