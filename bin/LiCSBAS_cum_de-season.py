@@ -263,7 +263,7 @@ def calc_vel_and_err(cum, G, sig):
     # identify locations of pixels with data but also with nans in the time series
     has_full_data = np.all(~np.isnan(cum), axis=0)
     data_completeness = has_data + has_full_data
-    plt.plot(data_completeness)
+    plt.imshow(data_completeness)
     plt.colorbar()
     plt.savefig('{}_data_completeness.png'.format(args.cumfile))
 
