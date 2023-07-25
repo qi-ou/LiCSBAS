@@ -10,6 +10,7 @@ import numpy as np
 import h5py as h5
 import datetime as dt
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import argparse
 import SCM
 import time
@@ -263,7 +264,8 @@ def calc_vel_and_err(cum, G, sig):
     # identify locations of pixels with data but also with nans in the time series
     has_full_data = np.all(~np.isnan(cum), axis=0)
     data_completeness = has_data + has_full_data
-    plt.imshow(data_completeness)
+    data_completeness[data_completeness==0] = np.nan
+    plt.imshow(data_completeness, cmap=cm.tab10)
     plt.colorbar()
     plt.savefig('{}_data_completeness.png'.format(args.cumfile))
 
