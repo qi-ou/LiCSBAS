@@ -263,11 +263,12 @@ def calc_vel_and_err(cum, G, sig):
 
     # identify locations of pixels with data but also with nans in the time series
     has_full_data = np.all(~np.isnan(cum), axis=0)
-    data_completeness = has_data + has_full_data
-    data_completeness[data_completeness==0] = np.nan
-    plt.imshow(data_completeness) #, cmap=cm.tab10
+    data_completeness = has_data.astype(int) + has_full_data.astype(int)
+    plt.imshow(data_completeness, interpolation='nearest') #, cmap=cm.tab10
     plt.colorbar()
+    plt.title("1=has nan in time series, 2=full data no nans")
     plt.savefig('{}_data_completeness.png'.format(args.cumfile))
+    plt.close()
 
     data = cum[()].reshape(n_im, cum[0].size)[:, has_data.ravel()]  # [()] to expose array under HDF5 dataset "cum", use ravel() because fancy indexing is only allowed on 1D arrays
     result = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
