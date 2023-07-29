@@ -143,7 +143,7 @@ def main(argv=None):
 
     if bad_ifgfile:
         bad_ifgdates = io_lib.read_ifg_list(bad_ifgfile)
-        ifgdates = list(set(ifgdates)-set(bad_ifgdates))
+        # ifgdates = list(set(ifgdates)-set(bad_ifgdates))
     else:
         bad_ifgdates = []
 
