@@ -54,6 +54,7 @@ def init_args():
                         help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
     parser.add_argument('--plot_cum', default=False, action='store_true', help="plot 3D time series")
     parser.add_argument('--plot_vel', default=False, action='store_true', help="plot vel components and uncertainties")
+    parser.add_argument('-n', dest='count_nans', default=False, action='store_true', help="count number of nan epochs in the time series")
 
     args = parser.parse_args()
 
@@ -260,16 +261,6 @@ def calc_vel_and_err(cum, G, sig):
 
     # identify pixels with data to solve
     has_data = np.any(~np.isnan(cum), axis=0)
-
-    # identify locations of pixels with data but also with nans in the time series
-    has_full_data = np.all(~np.isnan(cum), axis=0)
-    data_completeness = has_data.astype(int) + has_full_data.astype(int)
-    plt.imshow(data_completeness, interpolation='nearest') #, cmap=cm.tab10
-    plt.colorbar()
-    plt.title("1=has nan in time series, 2=full data no nans")
-    plt.savefig('{}_data_completeness.png'.format(args.cumfile))
-    plt.close()
-
     data = cum[()].reshape(n_im, cum[0].size)[:, has_data.ravel()]  # [()] to expose array under HDF5 dataset "cum", use ravel() because fancy indexing is only allowed on 1D arrays
     result = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
     stderr = np.zeros((G.shape[1], data.shape[1]), dtype=np.float32) * np.nan
@@ -309,6 +300,19 @@ def make_G(dt_cum):
     return G
 
 
+def count_nans(cum):
+    # identify pixels with data to solve
+    nan_epochs = np.sum(np.isnan(cum), axis=0).astype(float)
+    nan_epochs[nan_epochs == nan_epochs.max()] = np.nan
+
+    # identify locations of pixels with data but also with nans in the time series
+    plt.imshow(nan_epochs, interpolation='nearest', cmap=cm.viridis.reversed())
+    plt.colorbar()
+    plt.title("Number of nan epochs")
+    plt.savefig('{}_data_completeness.png'.format(args.cumfile))
+    plt.close()
+
+
 if __name__ == "__main__":
     start()
     init_args()
@@ -319,6 +323,9 @@ if __name__ == "__main__":
     cum = cumh5['cum']
     if args.plot_cum:
         plot_cum_grid(cum[:, ::args.downsample, ::args.downsample], imdates, args.cumfile, args.cumfile + ".png")
+
+    if args.count_nans:
+        count_nans(cum)
 
     ### Calc dt in year
     imdates_dt = ([dt.datetime.strptime(imd, '%Y%m%d').toordinal() for imd in imdates])
