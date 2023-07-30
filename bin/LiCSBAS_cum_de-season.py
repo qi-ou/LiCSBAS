@@ -203,16 +203,20 @@ def wls_pixel_wise(d, G, sig):
         if d.shape[1] > 1000:
             if i % 100 == 0:
                 print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
-        try:
-            # weighted least squares inversion
-            wlsfit = sm.WLS(d[:, i], G, weights=1 / sig ** 2, missing='drop').fit()
-            params[:, i] = wlsfit.params
-            errors[:, i] = wlsfit.bse
-            res[:, i] = wlsfit.resid
-        except:
-            params[:, i] = np.nan
-            errors[:, i] = np.nan
-            res[:, i] = np.nan
+        # try:
+        # weighted least squares inversion
+        mask = ~np.isnan(d[:, i])
+        masked_d = d[:, i][mask]
+        masked_G = G[mask]
+        masked_sig = sig[mask]
+        wlsfit = sm.WLS(masked_d, masked_G, weights=1 / masked_sig ** 2).fit()
+        params[:, i] = wlsfit.params
+        errors[:, i] = wlsfit.bse
+        res[mask, i] = wlsfit.resid
+        # except:
+        #     params[:, i] = np.nan
+        #     errors[:, i] = np.nan
+        #     res[:, i] = np.nan
 
     return params, errors, res
 
