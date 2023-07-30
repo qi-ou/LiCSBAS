@@ -205,7 +205,7 @@ def wls_pixel_wise(d, G, sig):
                 print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
         try:
             # weighted least squares inversion
-            wlsfit = sm.WLS(d, G, weights=1 / sig ** 2, missing='drop').fit()
+            wlsfit = sm.WLS(d[:, i], G, weights=1 / sig ** 2, missing='drop').fit()
             params[:, i] = wlsfit.params
             errors[:, i] = wlsfit.bse
             res[:, i] = wlsfit.resid
