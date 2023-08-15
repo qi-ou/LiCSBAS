@@ -22,7 +22,7 @@ import random
 from lmfit.model import *
 import os
 import time
-import glob
+import matplotlib.pyplot as plt
 import sys
 from osgeo import gdal
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
