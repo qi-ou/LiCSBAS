@@ -3,7 +3,13 @@
 ========
 Overview
 ========
-This script removes the seasonal components from a time series cube and plot the de-seasoned displacement series in a grid.
+This script takes in a cumulative displacement file in .h5 format and
+    - estimates ramp coefficients per epoch and model the coef time series with a linear + seasonal model
+    - calculates temporal residuals from modelling ramp coef time series
+    - calculates std of spatial residuals from deramped displacements
+    - weight the inversion for linear + seasonal components from the time series
+    - calculate standard error of model parameters from reduced chi-squares and covariance matrix
+    - optionally export time series with seasonal component removed
 """
 
 import numpy as np
@@ -22,7 +28,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(levelname)s -- 
 logger = logging.getLogger('pre_co_post_seismic.log')
 
 # changelog
-ver = "1.0"; date = 20230815; author = "Qi Ou, ULeeds"  # weight the inversion for linear + seasonal components from the time series using temporal residuals from long-wavelength planar ramps and spatial residuals from deramped displacements
+ver = "1.0"; date = 20230815; author = "Qi Ou, ULeeds"
+    # estimate ramp coefficients per epoch and model the coef time series with a linear + seasonal model
+    # calculate the weight using both temporal residuals from ramp coef time series and spatial residuals from deramped displacements
+    # weight the inversion for linear + seasonal components from the time series
+    # calculate standard error of model parameters from reduced chi-squares and covariance matrix
+    # optionally export time series with seasonal component removed
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
