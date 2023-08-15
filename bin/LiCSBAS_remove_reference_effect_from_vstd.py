@@ -71,7 +71,7 @@ def finish():
     sec = int(np.mod(elapsed_time, 60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour, minite, sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-    print('Output: {}\n{}\n'.format(os.path.relpath(args.outfile, args.png)))
+    print('Output: {}\n{}\n'.format(os.path.relpath(args.outfile), os.path.relpath(args.png)))
 
 
 class OpenTif:
