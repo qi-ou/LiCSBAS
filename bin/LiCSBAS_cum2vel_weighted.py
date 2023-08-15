@@ -22,9 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s -- %(levelname)s -- 
 logger = logging.getLogger('pre_co_post_seismic.log')
 
 # changelog
-ver = "1.0";
-date = 20230605;
-author = "Qi Ou, ULeeds"  # removes the seasonal components from a time series cube and plot
+ver = "1.0"; date = 20230815; author = "Qi Ou, ULeeds"  # weight the inversion for linear + seasonal components from the time series using temporal residuals from long-wavelength planar ramps and spatial residuals from deramped displacements
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -40,22 +38,18 @@ def init_args():
     global args
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='cumfile', default="cum.h5", type=str, help="input .h5 file")
-    parser.add_argument('-d', dest='downsample', default=10, type=int,
-                        help="downsample cumfile before removing seasonal component")
+    parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
     parser.add_argument('-p', dest='ramp', default=False, action='store_true', help="model planar ramp and use std of flattened time series to weight vel inversion")
     parser.add_argument('-s', dest='season', default=False, action='store_true', help="model seasonal trend")
     parser.add_argument('-l', dest='linear', default=False, action='store_true', help="model linear trend")
-    # parser.add_argument('--de_season', default=False, action='store_true', help="remove seasonal component")
-    # parser.add_argument('-t', dest='delta_t', default="xx.dt", type=str, help="this is an output of LiCSBAS_cum2vel.py")
-    # parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
-    parser.add_argument('-r', dest='ref', default=False, action='store_true',
-                        help="reference to the center of the image")
-    parser.add_argument('--heading', type=float, default=0, choices=[-10, -170, 0],
-                        help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
+    parser.add_argument('-r', dest='ref', default=False, action='store_true', help="reference to the center of the image, useful for forward model displacements")
+    parser.add_argument('--heading', type=float, default=0, choices=[-10, -170, 0], help="heading azimuth, -10 for asc, -170 for dsc, 0 if in radar coordinates, required if using deramp")
     parser.add_argument('--plot_cum', default=False, action='store_true', help="plot 3D time series")
     parser.add_argument('--plot_vel', default=False, action='store_true', help="plot vel components and uncertainties")
-    parser.add_argument('-n', dest='count_nans', default=False, action='store_true', help="count number of nan epochs in the time series")
-
+    parser.add_argument('--de_season', default=False, action='store_true', help="save the time series without the seasonal component, requires -s")
+    parser.add_argument('-n', dest='count_nans', default=False, action='store_true', help="produce a map of number of nan epochs in the time series")
+    # parser.add_argument('-t', dest='delta_t', default="xx.dt", type=str, help="this is an output of LiCSBAS_cum2vel.py")
+    # parser.add_argument('-a', dest='amp', default="xx.amp", type=str, help="this is an output of LiCSBAS_cum2vel.py")
     args = parser.parse_args()
 
 
@@ -203,7 +197,6 @@ def wls_pixel_wise(d, G, sig):
         if d.shape[1] > 1000:
             if i % 100 == 0:
                 print("  Solving {} / {} pixels".format(i, d.shape[1]), end="\r")
-        # try:
         # weighted least squares inversion
         mask = ~np.isnan(d[:, i])
         masked_d = d[:, i][mask]
@@ -213,10 +206,6 @@ def wls_pixel_wise(d, G, sig):
         params[:, i] = wlsfit.params
         errors[:, i] = wlsfit.bse
         res[mask, i] = wlsfit.resid
-        # except:
-        #     params[:, i] = np.nan
-        #     errors[:, i] = np.nan
-        #     res[:, i] = np.nan
 
     return params, errors, res
 
@@ -345,30 +334,6 @@ if __name__ == "__main__":
             plot_cum_grid(cum_ref[:, ::args.downsample, ::args.downsample], imdates, args.cumfile + "_ref2center", args.cumfile + "_ref2center.png")
         cum = cum_ref
 
-    # if args.de_season:
-    #     n_im, length, width = cum.shape
-    #     # read dt and amp from inputs and downsample
-    #     delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
-    #     amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
-    #     delta_t = delta_t[::args.downsample, ::args.downsample]
-    #     amp = amp[::args.downsample, ::args.downsample]
-    #
-    #     # remove seasonal_cum from cum to get remaining cum
-    #     print("Removing seasonal component...")
-    #     seasonal_cum = np.zeros(cum.shape) * np.nan
-    #     remain_cum = np.zeros(cum.shape) * np.nan
-    #     print("New cubes created...")
-    #     for x in np.arange(cum.shape[2]):
-    #         if x % (cum.shape[2] // 10) == 0:
-    #             print("Processing {}0%".format(x // (cum.shape[2] // 10)))
-    #         for y in np.arange(cum.shape[1]):
-    #             seasonal_cum[:, y, x] = amp[y, x] * np.cos(2 * np.pi * (dt_cum - delta_t[y, x] / 365.26))
-    #             remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
-    #     # plot cumulative displacement grids
-    #     if args.plot_cum:
-    #         plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
-    #         plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
-
     if args.ramp:
         logger.info("Estimating a planar ramp per epoch...")
         # downsample
@@ -416,9 +381,9 @@ if __name__ == "__main__":
     if args.linear:
         ### Weighted Least Squares Inversion
         G = make_G(dt_cum)
-        if args.ramp:
+        if args.ramp:  # use residuals of ramp coefs seasonal models and deramped std for weighting the inversion
             result_cube, stderr_cube, resid_cube = calc_vel_and_err(cum, G, sig)
-        else:
+        else:  # unweighted inversion
             result_cube, stderr_cube, resid_cube = calc_vel_and_err(cum, G, np.ones_like(dt_cum))
 
         # save linear velocity
@@ -447,12 +412,51 @@ if __name__ == "__main__":
             amp.tofile('{}_amp'.format(args.cumfile))
             delta_t.tofile('{}_delta_t'.format(args.cumfile))
             amp_max = np.nanpercentile(amp, 99)
+
             if args.plot_vel:
                 plot_lib.make_im_png(amp, '{}_amp.png'.format(args.cumfile), 'viridis', 'amp {}'.format(args.cumfile), vmin=0, vmax=amp_max)
                 plot_lib.make_im_png(delta_t, '{}_delta_t.png'.format(args.cumfile), SCM.romaO.reversed(), 'delta_t {}'.format(args.cumfile))
+
+            if args.de_season:
+                # add linear and residual component as an easier way to remove the seasonal component
+                linear_cube = np.dot(G[:, 1], vel)
+                de_seasoned_cube = linear_cube + resid_cube
+                print('\nWriting to HDF5 file...')
+                de_seasoned_h5 = h5.File('de_seasoned_cum.h5', 'w')
+                de_seasoned_h5.create_dataset('imdates', data=[np.int32(imd) for imd in imdates])
+                de_seasoned_h5.create_dataset('amp', data=amp, compression='gzip')
+                de_seasoned_h5.create_dataset('delta_t', data=delta_t, compression='gzip')
+                de_seasoned_h5.create_dataset('de_seasoned_cube', data=de_seasoned_cube, compression='gzip')
+                de_seasoned_h5.close()
 
         if args.plot_cum:
             plot_cum_grid(resid_cube[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
 
     cumh5.close()
     finish()
+
+
+    # if args.de_season:
+    #     n_im, length, width = cum.shape
+    #     # read dt and amp from inputs and downsample
+    #     delta_t = np.fromfile(args.delta_t, dtype=np.float32).reshape(length, width)
+    #     amp = np.fromfile(args.amp, dtype=np.float32).reshape(length, width)
+    #     delta_t = delta_t[::args.downsample, ::args.downsample]
+    #     amp = amp[::args.downsample, ::args.downsample]
+    #
+    #     # remove seasonal_cum from cum to get remaining cum
+    #     print("Removing seasonal component...")
+    #     seasonal_cum = np.zeros(cum.shape) * np.nan
+    #     remain_cum = np.zeros(cum.shape) * np.nan
+    #     print("New cubes created...")
+    #     for x in np.arange(cum.shape[2]):
+    #         if x % (cum.shape[2] // 10) == 0:
+    #             print("Processing {}0%".format(x // (cum.shape[2] // 10)))
+    #         for y in np.arange(cum.shape[1]):
+    #             seasonal_cum[:, y, x] = amp[y, x] * np.cos(2 * np.pi * (dt_cum - delta_t[y, x] / 365.26))
+    #             remain_cum[:, y, x] = cum[:, y, x] - seasonal_cum[:, y, x]
+    #     # plot cumulative displacement grids
+    #     if args.plot_cum:
+    #         plot_cum_grid(seasonal_cum, imdates, "Seasonal {}".format(args.cumfile), args.cumfile + ".seasonal.png")
+    #         plot_cum_grid(remain_cum, imdates, "De-seasoned {}".format(args.cumfile), args.cumfile + ".de-seasoned.png")
+
