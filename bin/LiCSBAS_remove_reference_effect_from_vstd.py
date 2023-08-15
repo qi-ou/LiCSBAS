@@ -3,19 +3,28 @@
 ========
 Overview
 ========
-This script removes the reference effect from the line-of-sight vstd maps by fitting a spherical or exponential model to the scatter between uncertainty and distance away from the reference center.
+This script takes a vstd.tif and removes the reference effect from the line-of-sight vstd maps by fitting a spherical or exponential model to the scatter between uncertainty and distance away from the reference center.
+
+Input:
+    vstd.tif
+Output:
+    vstd_scaled.tif
+    vstd_scaled.png
 """
 ####################
 
 ####################
-from merge_tif import *
-from pylab import *
 import pyproj
 import utm
 import argparse
 from scipy import stats
 import random
 from lmfit.model import *
+import os
+import time
+import glob
+import sys
+from osgeo import gdal
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
 # changelog
@@ -24,6 +33,7 @@ ver = "1.0"; date = 20220501; author = "Qi Ou, University of Oxford"
 ver = "1.1"; date = 20230815; author = "Qi Ou, University of Leeds"
     # choose a better model between spherical and exponential judging from the residuals
     # iteratively reduce the distance over which to fit the model to tackle difficult cases
+    # generalise utm zone determination
 
 # define global variable
 plot_variogram = True
@@ -62,6 +72,29 @@ def finish():
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour, minite, sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
     print('Output: {}\n{}\n'.format(os.path.relpath(args.outfile, args.png)))
+
+
+class OpenTif:
+    """ a Class that stores the band array and metadata of a Gtiff file."""
+    def __init__(self, filename, sigfile=None, incidence=None, heading=None, N=None, E=None, U=None):
+        self.ds = gdal.Open(filename)
+        self.basename = os.path.splitext(os.path.basename(filename))[0]
+        self.band = self.ds.GetRasterBand(1)
+        self.data = self.band.ReadAsArray()
+        self.xsize = self.ds.RasterXSize
+        self.ysize = self.ds.RasterYSize
+        self.left = self.ds.GetGeoTransform()[0]
+        self.top = self.ds.GetGeoTransform()[3]
+        self.xres = self.ds.GetGeoTransform()[1]
+        self.yres = self.ds.GetGeoTransform()[5]
+        self.right = self.left + self.xsize * self.xres
+        self.bottom = self.top + self.ysize * self.yres
+        self.projection = self.ds.GetProjection()
+        pix_lin, pix_col = np.indices((self.ds.RasterYSize, self.ds.RasterXSize))
+        self.lat, self.lon = self.top + self.yres*pix_lin, self.left+self.xres*pix_col
+
+        # convert 0 and 255 to NaN
+        self.data[self.data==0.] = np.nan
 
 
 def spherical(d, p, n, r):
@@ -105,22 +138,6 @@ def define_UTM(opentif):
     center_lon = (opentif.left + opentif.right) / 2
     _, _, zone, _ = utm.from_latlon(center_lat, center_lon)
     UTM = pyproj.Proj(proj='utm', zone=zone)
-    # if 96 <= (opentif.left + opentif.right) / 2 < 102:
-    #     UTM = pyproj.Proj(proj='utm', zone=47)
-    # elif 102 <= (opentif.left + opentif.right) / 2 < 108:
-    #     UTM = pyproj.Proj(proj='utm', zone=48)
-    # elif 90 <= (opentif.left + opentif.right) / 2 < 96:
-    #     utm = pyproj.Proj(proj='utm', zone=46)
-    # elif 84 <= (opentif.left + opentif.right) / 2 < 90:
-    #     utm = pyproj.Proj(proj='utm', zone=45)
-    # elif 78 <= (opentif.left + opentif.right) / 2 < 84:
-    #     utm = pyproj.Proj(proj='utm', zone=44)
-    # elif 72 <= (opentif.left + opentif.right) / 2 < 78:
-    #     utm = pyproj.Proj(proj='utm', zone=43)
-    # elif 66 <= (opentif.left + opentif.right) / 2 < 72:
-    #     utm = pyproj.Proj(proj='utm', zone=42)
-    # elif 60 <= (opentif.left + opentif.right) / 2 < 66:
-    #     utm = pyproj.Proj(proj='utm', zone=41)
     return UTM
 
 
@@ -204,180 +221,164 @@ def scale_value_by_variogram_ratio(y, x, model_result, model):
 
 
 if __name__ == "__main__":
-    ###################
-    # input parameters:
-    ###################
-    # sigma_suffix = '*165D_04666_131313.weighted.vstd.tif'
-    # sigma_dir = '../los_weighted/vstd'
-    # output_dir = '../los_weighted/vstd_corrected/'
-    # output_suffix = '_scaled_vstd.tif'
-    # Path(output_dir).mkdir(parents=True, exist_ok=True)
+    start()
+    init_args()
 
-    sigfileList = sorted(glob.glob(args.infile))
-    for f in sigfileList:
-        tif = OpenTif(f)
+    tif = OpenTif(args.infile)
+    try:
+        # prepare profile data
+        nonnan_mask, sig_nonnan, dist = get_profile_data(tif)
+        # calc stats along profile
+        median, std, bincenters = calc_median_std(dist, sig_nonnan)
+        # fit variogram model to stats along profile
+        spherical_model = Model(spherical)
+        exponential_model = Model(exponential)
+
         try:
-            # prepare profile data
-            nonnan_mask, sig_nonnan, dist = get_profile_data(tif)
-            # calc stats along profile
-            median, std, bincenters = calc_median_std(dist, sig_nonnan)
-            # fit variogram model to stats along profile
-            spherical_model = Model(spherical)
-            exponential_model = Model(exponential)
-
+            # take smaller range
+            mask = bincenters < 150
+            bincenters = bincenters[mask]
+            std = std[mask]
+            median = median[mask]
+            # weight points nearer to ref more heavily
+            result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters), 3))
+            result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters), 3))
+        except:
             try:
                 # take smaller range
-                mask = bincenters < 150
+                mask = bincenters < 120
                 bincenters = bincenters[mask]
                 std = std[mask]
                 median = median[mask]
+
                 # weight points nearer to ref more heavily
-                result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters), 3))
-                result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters), 3))
+                result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
+                result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
             except:
-                try:
-                    # take smaller range
-                    mask = bincenters < 120
-                    bincenters = bincenters[mask]
-                    std = std[mask]
-                    median = median[mask]
+                # take smaller range
+                mask = bincenters < 100
+                bincenters = bincenters[mask]
+                std = std[mask]
+                median = median[mask]
 
-                    # weight points nearer to ref more heavily
-                    result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
-                    result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
-                except:
-                    # take smaller range
-                    mask = bincenters < 100
-                    bincenters = bincenters[mask]
-                    std = std[mask]
-                    median = median[mask]
+                # weight points nearer to ref more heavily
+                result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
+                result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
 
-                    # weight points nearer to ref more heavily
-                    result_spherical = fit_model(spherical_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
-                    result_exponential = fit_model(exponential_model, median, bincenters, std+np.power(bincenters/max(bincenters),3))
+        if result_spherical.chisqr < result_exponential.chisqr:
+            result = result_spherical
+            model = 'spherical'
+            print("Choosing spherical model")
+        else:
+            result = result_exponential
+            model = 'exponential'
+            print("Choosing exponential model")
 
-            if result_spherical.chisqr < result_exponential.chisqr:
-                result = result_spherical
-                model = 'spherical'
-                print("Choosing spherical model")
-            else:
-                result = result_exponential
-                model = 'exponential'
-                print("Choosing exponential model")
+        # scale sig_nonnan based on variogram model
+        sig_nonnan_scaled = scale_value_by_variogram_ratio(sig_nonnan, dist, result, model)
+        # populate scalled uncertainty map
+        new_map = np.ones(nonnan_mask.shape)*np.nan
+        new_map[nonnan_mask] = sig_nonnan_scaled
+        new_map = new_map.reshape(tif.data.shape)
+        fit_scaled = scale_value_by_variogram_ratio(result.best_fit, bincenters, result, model)
 
-            # scale sig_nonnan based on variogram model
-            sig_nonnan_scaled = scale_value_by_variogram_ratio(sig_nonnan, dist, result, model)
-            # populate scalled uncertainty map
-            new_map = np.ones(nonnan_mask.shape)*np.nan
-            new_map[nonnan_mask] = sig_nonnan_scaled
-            new_map = new_map.reshape(tif.data.shape)
-            #
-            # median_scaled = scale_value_by_variogram_ratio(median, bincenters, result)
-            # median_plus_scaled = scale_value_by_variogram_ratio(median+std, bincenters, result)
-            # median_minus_scaled = scale_value_by_variogram_ratio(median-std, bincenters, result)
-            fit_scaled = scale_value_by_variogram_ratio(result.best_fit, bincenters, result, model)
+        # plotting
+        fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2, figsize=(6.4, 4.8))
 
-            # plotting
-            fig, [[ax1, ax2], [ax3, ax4]] = subplots(2, 2, figsize=(6.4, 4.8))
+        # plot scatter with stats of uncertainty values
+        subset = random.sample(range(1, len(dist)), min(int(len(dist)/2), 50000))
+        ax1.scatter(dist[subset], sig_nonnan[subset], c=sig_nonnan[subset], s=0.1, vmin=0, vmax=2)
+        ax1.plot(bincenters, median, linewidth=2, c="gold")
+        ax1.plot(bincenters, median+std, linewidth=1, c="gold")
+        ax1.plot(bincenters, median-std, linewidth=1, c="gold")
+        ax1.set_xlim((0, bincenters[-1]))
+        ax1.set_ylim((0, min(2, max(median+3*std))))
+        ax1.tick_params(labelbottom=False)
+        ax1.set_ylabel("$\sigma$(LOS), mm/yr")
+        ax1.set_title("Uncertainty Profile")
+        ax1.plot(bincenters, result.best_fit, linewidth=2, c="red", label='n={:.1f}, s={:.1f}, r={:.0f}'
+                 .format(result.best_values['n'], result.best_values['p']+result.best_values['n'], result.best_values['r']))
+        ax1.legend(loc=4)
 
-            # plot scatter with stats of uncertainty values
-            subset = random.sample(range(1, len(dist)), min(int(len(dist)/2), 50000))
-            ax1.scatter(dist[subset], sig_nonnan[subset], c=sig_nonnan[subset], s=0.1, vmin=0, vmax=2)
-            ax1.plot(bincenters, median, linewidth=2, c="gold")
-            ax1.plot(bincenters, median+std, linewidth=1, c="gold")
-            ax1.plot(bincenters, median-std, linewidth=1, c="gold")
-            ax1.set_xlim((0, bincenters[-1]))
-            ax1.set_ylim((0, min(2, max(median+3*std))))
-            ax1.tick_params(labelbottom=False)
-            ax1.set_ylabel("$\sigma$(LOS), mm/yr")
-            ax1.set_title("Uncertainty Profile")
-            ax1.plot(bincenters, result.best_fit, linewidth=2, c="red", label='n={:.1f}, s={:.1f}, r={:.0f}'
-                     .format(result.best_values['n'], result.best_values['p']+result.best_values['n'], result.best_values['r']))
-            ax1.legend(loc=4)
+        # plot scatter with stats of uncertainty values
+        ax3.scatter(dist[subset], sig_nonnan_scaled[subset], c=sig_nonnan_scaled[subset], s=0.1, vmin=0, vmax=2)
+        ax3.plot(bincenters, fit_scaled, linewidth=2, c="red")
+        ax3.set_ylim((0, min(2, max(median+3*std))))
+        ax3.set_xlabel("Distance to reference, km")
+        ax3.set_ylabel("$\sigma$(LOS), mm/yr")
+        ax3.set_title("Scaled Uncertainty Profile")
+        ax3.set_xlim((0, bincenters[-1]))
 
+        # plot uncertainty map with reference location
+        im = ax2.imshow(tif.data, vmin=0, vmax=2)
+        ax2.plot(tif.ref_loc[1], tif.ref_loc[0], marker="o", markersize=5, c='gold')
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        fig.colorbar(im, cax=cax, label="mm/yr")
+        ax2.set_title("Uncertainty Map")
 
-            # plot scatter with stats of uncertainty values
-            ax3.scatter(dist[subset], sig_nonnan_scaled[subset], c=sig_nonnan_scaled[subset], s=0.1, vmin=0, vmax=2)
-            # ax3.plot(bincenters, median_scaled, linewidth=2, c="gold")
-            # ax3.plot(bincenters, median_plus_scaled, linewidth=1, c="gold")
-            # ax3.plot(bincenters, median_minus_scaled, linewidth=1, c="gold")
-            ax3.plot(bincenters, fit_scaled, linewidth=2, c="red")
-            ax3.set_ylim((0, min(2, max(median+3*std))))
-            ax3.set_xlabel("Distance to reference, km")
-            ax3.set_ylabel("$\sigma$(LOS), mm/yr")
-            ax3.set_title("Scaled Uncertainty Profile")
-            ax3.set_xlim((0, bincenters[-1]))
+        # plot scaled uncertainty map
+        im = ax4.imshow(new_map, vmin=0, vmax=2)
+        divider = make_axes_locatable(ax4)
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        fig.colorbar(im, cax=cax, label="mm/yr")
+        ax4.set_title("Scaled Uncertainty Map")
+        ax4.set_xlabel(tif.basename[:17], labelpad=15)
 
-            # plot uncertainty map with reference location
-            im = ax2.imshow(tif.data, vmin=0, vmax=2)
-            ax2.plot(tif.ref_loc[1], tif.ref_loc[0], marker="o", markersize=5, c='gold')
-            divider = make_axes_locatable(ax2)
-            cax = divider.append_axes('right', size='5%', pad=0.05)
-            fig.colorbar(im, cax=cax, label="mm/yr")
-            ax2.set_title("Uncertainty Map")
+        for ax in ax2, ax4:
+            ax.set_xticks([])
+            ax.set_yticks([])
+        plt.tight_layout()
+        plt.show()
+        # fig.savefig(output_dir+tif.basename+".png", format='PNG', dpi=300, bbox_inches='tight')
+        fig.savefig(args.png, format='PNG', dpi=300, bbox_inches='tight')
 
-            # plot scaled uncertainty map
-            im = ax4.imshow(new_map, vmin=0, vmax=2)
-            divider = make_axes_locatable(ax4)
-            cax = divider.append_axes('right', size='5%', pad=0.05)
-            fig.colorbar(im, cax=cax, label="mm/yr")
-            ax4.set_title("Scaled Uncertainty Map")
-            ax4.set_xlabel(tif.basename[:17], labelpad=15)
+        # Export scaled uncertainty map to tif format.
+        driver = gdal.GetDriverByName("GTiff")
+        outdata = driver.Create(args.outfile, tif.xsize, tif.ysize, 1, gdal.GDT_Float32)
+        outdata.SetGeoTransform([tif.left, tif.xres, 0, tif.top, 0, tif.yres])  ##sets same geotransform as input
+        outdata.SetProjection(tif.projection)  ##sets same projection as input
+        outdata.GetRasterBand(1).WriteArray(new_map)
+        outdata.FlushCache()
+        outdata.FlushCache()  # need to flush twice to export the last tif properly, otherwise it stops halfway.
 
-            for ax in ax2, ax4:
-                ax.set_xticks([])
-                ax.set_yticks([])
-            plt.tight_layout()
-            plt.show()
-            # fig.savefig(output_dir+tif.basename+".png", format='PNG', dpi=300, bbox_inches='tight')
-            fig.savefig(args.png, format='PNG', dpi=300, bbox_inches='tight')
+    except:
+        print("entering exception, plot till before scaling only")
+        # prepare profile data
+        nonnan_mask, sig_nonnan, dist = get_profile_data(tif)
+        # calc stats along profile
+        median, std, bincenters = calc_median_std(dist, sig_nonnan)
 
-            # Export scaled uncertainty map to tif format.
-            driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create(args.outfile, tif.xsize, tif.ysize, 1, gdal.GDT_Float32)
-            outdata.SetGeoTransform([tif.left, tif.xres, 0, tif.top, 0, tif.yres])  ##sets same geotransform as input
-            outdata.SetProjection(tif.projection)  ##sets same projection as input
-            outdata.GetRasterBand(1).WriteArray(new_map)
-            outdata.FlushCache()
-            outdata.FlushCache()  # need to flush twice to export the last tif properly, otherwise it stops halfway.
+        # plotting
+        fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2, figsize=(6.4, 4.8))
 
-        except:
-            print("entering exception, plot before scaling only")
-            # prepare profile data
-            nonnan_mask, sig_nonnan, dist = get_profile_data(tif)
-            # calc stats along profile
-            median, std, bincenters = calc_median_std(dist, sig_nonnan)
+        # plot scatter with stats of uncertainty values
+        subset = random.sample(range(1, len(dist)), min(int(len(dist)/2), 50000))
+        ax1.scatter(dist[subset], sig_nonnan[subset], c=sig_nonnan[subset], s=0.1, vmin=0, vmax=2)
+        ax1.plot(bincenters, median, linewidth=2, c="gold")
+        ax1.plot(bincenters, median+std, linewidth=1, c="gold")
+        ax1.plot(bincenters, median-std, linewidth=1, c="gold")
+        ax1.set_xlim((0, bincenters[-1]))
+        ax1.set_ylim((0, min(2, max(median+3*std))))
+        ax1.tick_params(labelbottom=False)
+        ax1.set_ylabel("$\sigma$(LOS), mm/yr")
+        ax1.set_title("Uncertainty Profile")
+        ax1.plot(bincenters, result.best_fit, linewidth=2, c="red", label='n={:.1f}, s={:.1f}, r={:.0f}'
+                 .format(result.best_values['n'], result.best_values['p']+result.best_values['n'], result.best_values['r']))
+        ax1.legend(loc=4)
 
-            # plotting
-            fig, [[ax1, ax2], [ax3, ax4]] = subplots(2, 2, figsize=(6.4, 4.8))
+        # plot uncertainty map with reference location
+        im = ax2.imshow(tif.data, vmin=0, vmax=2)
+        ax2.plot(tif.ref_loc[1], tif.ref_loc[0], marker="o", markersize=5, c='gold')
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        fig.colorbar(im, cax=cax, label="mm/yr")
+        ax2.set_title("Uncertainty Map")
 
-            # plot scatter with stats of uncertainty values
-            subset = random.sample(range(1, len(dist)), min(int(len(dist)/2), 50000))
-            ax1.scatter(dist[subset], sig_nonnan[subset], c=sig_nonnan[subset], s=0.1, vmin=0, vmax=2)
-            ax1.plot(bincenters, median, linewidth=2, c="gold")
-            ax1.plot(bincenters, median+std, linewidth=1, c="gold")
-            ax1.plot(bincenters, median-std, linewidth=1, c="gold")
-            ax1.set_xlim((0, bincenters[-1]))
-            ax1.set_ylim((0, min(2, max(median+3*std))))
-            ax1.tick_params(labelbottom=False)
-            ax1.set_ylabel("$\sigma$(LOS), mm/yr")
-            ax1.set_title("Uncertainty Profile")
-            ax1.plot(bincenters, result.best_fit, linewidth=2, c="red", label='n={:.1f}, s={:.1f}, r={:.0f}'
-                     .format(result.best_values['n'], result.best_values['p']+result.best_values['n'], result.best_values['r']))
-            ax1.legend(loc=4)
+        for ax in [ax2]:
+            ax.set_xticks([])
+            ax.set_yticks([])
+        plt.tight_layout()
+        plt.show()
 
-            # plot uncertainty map with reference location
-            im = ax2.imshow(tif.data, vmin=0, vmax=2)
-            ax2.plot(tif.ref_loc[1], tif.ref_loc[0], marker="o", markersize=5, c='gold')
-            divider = make_axes_locatable(ax2)
-            cax = divider.append_axes('right', size='5%', pad=0.05)
-            fig.colorbar(im, cax=cax, label="mm/yr")
-            ax2.set_title("Uncertainty Map")
-
-            for ax in [ax2]:
-                ax.set_xticks([])
-                ax.set_yticks([])
-            plt.tight_layout()
-            plt.show()
-
-
+    finish()

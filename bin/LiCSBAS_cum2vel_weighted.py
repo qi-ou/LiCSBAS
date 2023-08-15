@@ -10,6 +10,19 @@ This script takes in a cumulative displacement file in .h5 format and
     - weight the inversion for linear + seasonal components from the time series
     - calculate standard error of model parameters from reduced chi-squares and covariance matrix
     - optionally export time series with seasonal component removed
+
+Input:
+    - [cum.h5] any .h5 file with a 3D array and a imdate vector
+
+Outputs:
+    - xx.h5.png [--plot_cum]
+    - xx.h5_vel [-l] and .png [--plot_png]
+    - xx.h5_vstd [-l] and .png [--plot_png]
+    - xx.h5_amp [-s] and .png [--plot_png]
+    - xx.h5_dt [-s] and .png [--plot_png]
+    - xx.h5_ramp_coefs_resid_flat_std.png [-p]
+    - xx.de_seasoned.h5 [--de_season]
+
 """
 
 import numpy as np
@@ -49,7 +62,7 @@ def init_args():
     global args
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='cumfile', default="cum.h5", type=str, help="input .h5 file")
-    parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile before removing seasonal component")
+    parser.add_argument('-d', dest='downsample', default=10, type=int, help="downsample cumfile for ramp estimation and time series plotting")
     parser.add_argument('-p', dest='ramp', default=False, action='store_true', help="model planar ramp and use std of flattened time series to weight vel inversion")
     parser.add_argument('-s', dest='season', default=False, action='store_true', help="model seasonal trend")
     parser.add_argument('-l', dest='linear', default=False, action='store_true', help="model linear trend")
@@ -433,7 +446,7 @@ if __name__ == "__main__":
                 linear_cube = np.dot(G[:, 1], vel)
                 de_seasoned_cube = linear_cube + resid_cube
                 print('\nWriting to HDF5 file...')
-                de_seasoned_h5 = h5.File('de_seasoned_cum.h5', 'w')
+                de_seasoned_h5 = h5.File(args.cumfile[:-2]+'de_seasoned.h5', 'w')
                 de_seasoned_h5.create_dataset('imdates', data=[np.int32(imd) for imd in imdates])
                 de_seasoned_h5.create_dataset('amp', data=amp, compression='gzip')
                 de_seasoned_h5.create_dataset('delta_t', data=delta_t, compression='gzip')
