@@ -23,6 +23,9 @@ LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_li
  -s Separate strongly connected component from weak connections
  -m Allowed months (eg. 3.4.5.12, months separated by period, order doesn't matter)
  -t lower bound of temporal baseline
+ -e keep edge cuts (option when -s is used)
+ -n keep node cuts (option when -s is used)
+ -l label for "red lines" when -r is used
 
 """
 
