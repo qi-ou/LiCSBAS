@@ -583,7 +583,7 @@ if __name__ == "__main__":
         if lastevent:  ## Time series plot
             printcoords(lastevent)
 
-    RS = RectangleSelector(axv, line_select_callback, drawtype='box', useblit=True, button=[3], spancoords='pixels', interactive=False)
+    RS = RectangleSelector(axv, line_select_callback, useblit=True, button=[3], spancoords='pixels', interactive=False)
 
     plt.connect('key_press_event', RS)
 
@@ -770,8 +770,8 @@ if __name__ == "__main__":
         else:
             lastevent = event  ## Update last event
 
-        ii = np.int(np.round(event.ydata))
-        jj = np.int(np.round(event.xdata))
+        ii = int(np.round(event.ydata))
+        jj = int(np.round(event.xdata))
 
         ### Plot on image window
         ii1h = ii-0.5; ii2h = ii+1-0.5 ## Shift half for plot

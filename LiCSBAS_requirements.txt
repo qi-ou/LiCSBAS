@@ -9,3 +9,10 @@ psutil
 requests
 shapely
 statsmodels
+xarray
+rioxarray
+lapack
+netCDF4
+bottleneck
+colorcet
+

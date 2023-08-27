@@ -622,7 +622,9 @@ def main(argv=None):
             # this will use only unws with mask having both True and False, i.e. all points False = unw not used in any loop, to check
             if not np.min(mask) and np.max(mask):
                 nullify_unw(ifgd, mask)
-
+        # recalculating ns_loop_err to be after nullification (long but... ok for now)
+        ns_loop_err, da = loop_closure_4th([0, len(Aloop)], da)
+    
     # generate loop pngs:
     if do_pngs:
         ### Parallel processing
