@@ -309,12 +309,12 @@ def main():
     read_length_width()
 
     # calc quality stats based on the final corrected unw
-    # n_unw = calc_n_unw()
+    n_unw = calc_n_unw()
     calc_coh_avg()
-    # calc_n_loop_error(n_unw)
+    calc_n_loop_error(n_unw)
 
     # compile all results to h5
-    # write_h5()
+    write_h5()
 
     # report finish
     finish()
