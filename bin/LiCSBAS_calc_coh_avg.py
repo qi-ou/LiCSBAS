@@ -108,11 +108,10 @@ def finish():
     sec = int(np.mod(elapsed_time,60))
     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour,minite,sec))
     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-    print('Output directory: {}\n'.format(os.path.relpath(tsadir)))
 
 
 def set_input_output():
-    global ccdir, ifgdir, ifgdates
+    global ccdir, ifgdir, ifgdates, coh_avgfile
 
     # define input directories and file
     ccdir = os.path.abspath(os.path.join(args.frame_dir, args.comp_cc_dir))
@@ -122,6 +121,10 @@ def set_input_output():
     else:
         ifgdates = tools_lib.get_ifgdates(ccdir)
 
+    if args.outfile:
+        coh_avgfile = os.path.join(args.outfile)
+    else:
+        coh_avgfile = os.path.join('coh_avg')
 
 def read_length_width():
     global length, width
@@ -129,7 +132,6 @@ def read_length_width():
     mlipar = os.path.join(ccdir, 'slc.mli.par')
     width = int(io_lib.get_param_par(mlipar, 'range_samples'))
     length = int(io_lib.get_param_par(mlipar, 'azimuth_lines'))
-
 
 def calc_coh_avg():
     print("Computing average coherence...")
@@ -152,7 +154,6 @@ def calc_coh_avg():
     coh_avg[coh_avg==0] = np.nan
 
     ### Write to file
-    coh_avgfile = os.path.join('coh_avg'+args.ifg_list)
     coh_avg.tofile(coh_avgfile)
 
     ### Save png
