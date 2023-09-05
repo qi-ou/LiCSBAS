@@ -70,6 +70,7 @@ ifg_id = np.zeros((len(ifgdates), 2))
 
 ### Accumulate through network (1)unw pixel counts, (2) coherence and (3) size of connected components
 for i, ifgd in enumerate(ifgdates):
+    print(ifgd)
     # turn ifg into ones and zeros for non-nan and nan values
     unwfile = os.path.join(ifgdir, ifgd, ifgd + '.unw')
     unw = io_lib.read_img(unwfile, length, width)
