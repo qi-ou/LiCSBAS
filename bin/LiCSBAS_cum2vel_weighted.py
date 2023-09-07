@@ -443,7 +443,10 @@ if __name__ == "__main__":
 
             if args.de_season:
                 # add linear and residual component as an easier way to remove the seasonal component
-                linear_cube = np.dot(G[:, 1], vel)
+                G1 = np.expand_dims(G[:, 1], axis=1)
+                velr = np.expand_dims(vel.ravel(), axis=0)
+                linear_cube = np.dot(G1, velr).reshape((len(G1), vel.shape[0], vel.shape[1]))
+                # linear_cube = np.dot(G[:, 1], vel)
                 de_seasoned_cube = linear_cube + resid_cube
                 print('\nWriting to HDF5 file...')
                 de_seasoned_h5 = h5.File(args.cumfile[:-2]+'de_seasoned.h5', 'w')
