@@ -446,7 +446,9 @@ if __name__ == "__main__":
                 G1 = np.expand_dims(G[:, 1], axis=1)
                 velr = np.expand_dims(vel.ravel(), axis=0)
                 linear_cube = np.dot(G1, velr).reshape((len(G1), vel.shape[0], vel.shape[1]))
-                # linear_cube = np.dot(G[:, 1], vel)
+                refarea = cumh5['refarea'][()]
+                if type(refarea) is bytes:
+                    refarea = refarea.decode('utf-8')
                 de_seasoned_cube = linear_cube + resid_cube
                 print('\nWriting to HDF5 file...')
                 de_seasoned_h5 = h5.File(args.cumfile[:-2]+'de_seasoned.h5', 'w')
@@ -454,7 +456,7 @@ if __name__ == "__main__":
                 de_seasoned_h5.create_dataset('amp', data=amp, compression='gzip')
                 de_seasoned_h5.create_dataset('delta_t', data=delta_t, compression='gzip')
                 de_seasoned_h5.create_dataset('cum', data=de_seasoned_cube, compression='gzip')
-                de_seasoned_h5.create_dataset('refarea', data=cumh5['refarea'][()], compression='gzip')
+                de_seasoned_h5.create_dataset('refarea', data=refarea, compression='gzip')
                 de_seasoned_h5.close()
 
         if args.plot_cum:
