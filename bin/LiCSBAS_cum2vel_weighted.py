@@ -454,6 +454,7 @@ if __name__ == "__main__":
                 de_seasoned_h5.create_dataset('amp', data=amp, compression='gzip')
                 de_seasoned_h5.create_dataset('delta_t', data=delta_t, compression='gzip')
                 de_seasoned_h5.create_dataset('cum', data=de_seasoned_cube, compression='gzip')
+                de_seasoned_h5.create_dataset('refarea', data=cumh5['refarea'], compression='gzip')
                 de_seasoned_h5.close()
 
         if args.plot_cum:
