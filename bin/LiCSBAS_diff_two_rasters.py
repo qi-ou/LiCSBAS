@@ -64,7 +64,7 @@ def init_args():
     parser.add_argument('--vmin', dest='vmin', type=float, help="lower end of colourmap")
     parser.add_argument('--vmax', dest='vmax', type=float, help="upper end of colourmap")
     parser.add_argument('-o', dest='outfile', type=str, help="pngfile of a 3 panel plot showing the difference")
-    parser.add_argument('-d', dest='ifgdir', default='GEOCml10GACOS', type=str, help="directory containing slc.mli.par, required if rasters not in tiff format")
+    parser.add_argument('-d', dest='ifgdir', default='GEOCml10GACOS', type=str, help="directory containing slc.mli.par")
     args = parser.parse_args()
 
 
