@@ -463,6 +463,11 @@ if __name__ == "__main__":
                 de_seasoned_h5.create_dataset('refarea', data='{}:{}/{}:{}'.format(refx1, refx2, refy1, refy2))
                 de_seasoned_h5.close()
 
+                if args.plot_cum:
+                    plot_cum_grid(de_seasoned_cube[:, ::args.downsample, ::args.downsample], imdates,
+                                  "Deseason {}".format(args.cumfile),
+                                  args.cumfile + "deseason.png")
+
         if args.plot_cum:
             plot_cum_grid(resid_cube[:, ::args.downsample, ::args.downsample], imdates, "Resid {} (linear={}, season={})".format(args.cumfile, str(args.linear), str(args.season)), args.cumfile + "resid.png")
 
