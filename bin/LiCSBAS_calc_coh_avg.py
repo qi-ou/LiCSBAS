@@ -1,53 +1,6 @@
 #!/usr/bin/env python3
 """
-========
-Overview
-========
-This script:
- - copies file 130cum*.h5 to cum.h5
- - copies folder 130results* to results
- - calcs n_unw, n_loop_err, coh_avg
- - assumbles all results into cum.h5
 
-===============
-Input & output files
-===============
-
-Inputs in GEOCml*/ (--comp_cc_dir):
- - slc.mli.par
- - yyyymmdd_yyyymmdd/
-   - yyyymmdd_yyyymmdd.cc
-
-Inputs in GEOCml*/ (--unw_dir):
- - yyyymmdd_yyyymmdd/
-   - yyyymmdd_yyyymmdd.unw
-
-Inputs in TS_GEOCml*/ :
- - 130cum*.h5            : Cumulative displacement (time-seires) in mm from final iteration, to copy to cum.h5
-
- - 130results*           : Results from final iteration of automatic correction, to copy to results
-    -vel[.png]           : Velocity in mm/yr (positive means LOS decrease; uplift)
-   - vintercept[.png]    : Constant part of linear velocity (c for vt+c) in mm
-   - resid_rms[.png]     : RMS of residual in mm
-   - n_gap[.png]         : Number of gaps in SB network
-   - n_ifg_noloop[.png]  : Number of ifgs with no loop
-   - maxTlen[.png]       : Max length of continous SB network in year
-
- - info
-   - 120ref.txt          : Reference window
-
-Outputs in TS_GEOCml*/ :
- - cum.h5                : Cumulative displacement (time-seires) in mm
-
- - results/
-   - n_unw[.png]         : Number of available unwrapped data to be used
-   - coh_avg[.png]       : Average coherence
-   - n_loop_err[.png]    : Number of remaining loop errors (>pi) in data to be used
-
-=====
-Usage
-=====
-LiCSBAS133_write_h5.py [-h] [-f FRAME_DIR] [-c COMP_CC_DIR] [-t TS_DIR] [--suffix SUFFIX]
 """
 
 #%% Change log

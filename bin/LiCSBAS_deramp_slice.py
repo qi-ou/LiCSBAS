@@ -48,25 +48,8 @@ def init_args():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=CustomFormatter)
     parser.add_argument('-i', dest='infile', type=str, help="input float file")
     parser.add_argument('-p', dest='parfile', type=str, help="input slc.mli.par file")
-    parser.add_argument('-o', dest='outfile',type=str, help="output float file")
+    parser.add_argument('-o', dest='outfile', type=str, help="output float file")
     args = parser.parse_args()
-
-#
-# def start():
-#     global start_time
-#     start_time = time.time()
-#     print("\n{} ver{} {} {}".format(os.path.basename(sys.argv[0]), ver, date, author), flush=True)
-#     print("{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-#
-#
-# def finish():
-#     elapsed_time = time.time() - start_time
-#     hour = int(elapsed_time / 3600)
-#     minite = int(np.mod((elapsed_time / 60), 60))
-#     sec = int(np.mod(elapsed_time, 60))
-#     print("\nElapsed time: {0:02}h {1:02}m {2:02}s".format(hour, minite, sec))
-#     print("\n{} {}".format(os.path.basename(sys.argv[0]), ' '.join(sys.argv[1:])), flush=True)
-#     # print('Output: {}\n'.format(os.path.relpath(args.outfile)))
 
 
 def fit_plane(z, theta=0):
@@ -101,17 +84,23 @@ def read_length_width():
 
 
 if __name__ == "__main__":
-    # start()
     init_args()
+    print(args.infile)
     read_length_width()
+    print(length, width)
     data = io_lib.read_img(args.infile, length, width)
     plane_fit, range_coef, azi_coef = fit_plane(data)
     flatten = data - plane_fit
-    fig, ax = plt.subplots(1,3)
-    ax[0].imshow(data)
-    ax[1].imshow(plane_fit)
-    ax[2].imshow(flatten)
-    plt.savefig("flatten.png")
+
+
+    # fig, ax = plt.subplots(1,3)
+    # ax[0].imshow(data)
+    # ax[1].imshow(plane_fit)
+    # ax[2].imshow(flatten)
+    # plt.savefig("flatten.png")
+
+    flatten.astype(np.float32).tofile(args.outfile)
+
 
 
 
