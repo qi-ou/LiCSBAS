@@ -96,9 +96,7 @@ def txt2hist(frameID_path, file):
 
 def calc_epoch_number_from_df(df):
     # Annotate the histogram with mean and standard deviation
-    df['epoch1'] = df['ifg'].str.slice(0, 8)
-    df['epoch2'] = df['ifg'].str.slice(-8)
-    epochs = set(df['epoch1']).union(set(df['epoch2']))
+    epochs = set(df['ifg'].str.slice(0, 8)).union(set(df['ifg'].str.slice(-8)))
     epoch_num = len(epochs)
     return epoch_num
 
