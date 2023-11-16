@@ -29,7 +29,9 @@ import numpy as np
 import argparse
 import time
 import sys
-
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     '''
