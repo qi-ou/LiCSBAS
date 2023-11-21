@@ -210,11 +210,17 @@ def scale_value_by_variogram_ratio(y, x, model_result, model):
     @return: scaled array of y
     """
     best = model_result.best_values
-    sill = best['p'] + best['n']  # total sill
     if model == 'spherical':
         theoretical_y = spherical(x, best['p'], best['n'], best['r'])
     if model == 'exponential':
         theoretical_y = exponential(x, best['p'], best['n'], best['r'])
+    if best['r'] < x.max():
+        sill = best['p'] + best['n']  # total sill
+    else:  # if range is greater than the x.max, then choose the theoretical_y at x.max as the sill
+        if model == 'spherical':
+            sill = spherical(x.max(), best['p'], best['n'], best['r'])
+        if model == 'exponential':
+            sill = exponential(x.max(), best['p'], best['n'], best['r'])
     scaling_factor = sill / theoretical_y
     y_scaled = y * scaling_factor
     return y_scaled
