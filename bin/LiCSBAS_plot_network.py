@@ -87,7 +87,7 @@ def main(argv=None):
     remove_node_cuts = True
     skip_node_cuts = False
     label_name = None
-    title = None
+    title = "None"
 
 
     #%% Read options
