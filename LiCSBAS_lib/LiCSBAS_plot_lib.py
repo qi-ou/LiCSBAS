@@ -8,6 +8,8 @@ Python3 library of plot functions for LiCSBAS.
 =========
 Changelog
 =========
+20231203 Qi Ou, UoL
+ - add title to plot
 20230827 Qi Ou, UoL
  - plot_strong_weak_cuts_network
  - plot_coloured_network

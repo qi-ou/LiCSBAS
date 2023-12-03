@@ -28,6 +28,7 @@ LiCSBAS_plot_network.py -i ifg_list -b bperp_list [-o outpngfile] [-r bad_ifg_li
  -l label for "red lines" when -r is used
  --skip_node_cuts do not check for node cuts (option when -s is used)
  --not_strict keep ifg as long as one epoch is in an allowed month (option when -m is used)
+ --title to add a title to the plot
 
 
 """
