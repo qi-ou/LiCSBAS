@@ -162,7 +162,7 @@ def init_args():
     parser.add_argument('--keep_incfile', default=False, action='store_true', help="Remove inc and resid files if False")
     parser.add_argument('--nopngs', default=False, action='store_true', help="Avoid generating some (unnecessary) PNG previews of increment residuals etc.")
     parser.add_argument('--gpu', default=False, action='store_true', help="Use GPU (Need cupy module)")
-    parser.add_argument('--fast', default=False, action='store_true', help="Use more economic NSBAS computation (should be faster and less demanding, may bring errors in points with many gaps)")
+    parser.add_argument('--singular', default=False, action='store_true', help="Use more economic NSBAS computation (should be faster and less demanding, may bring errors in points with many gaps)")
     parser.add_argument('--only_sb', default=False, action='store_true', help="Perform only SB processing (skipping points with NaNs)")
     args = parser.parse_args()
 
@@ -590,7 +590,7 @@ def main():
                     unwpatch, varpatch, G, dt_cum, args.gamma, n_para_inv)
             else:
                 inc_tmp, vel_tmp, vconst_tmp = inv_lib.invert_nsbas(
-                    unwpatch, G, dt_cum, args.gamma, n_para_inv, args.gpu, fast=args.fast, only_sb=args.only_sb)
+                    unwpatch, G, dt_cum, args.gamma, n_para_inv, args.gpu, singular=args.singular, only_sb=args.only_sb)
 
             ### Set to valuables
             inc_patch = np.zeros((n_im-1, n_pt_all), dtype=np.float32)*np.nan
