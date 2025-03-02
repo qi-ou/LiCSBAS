@@ -4,13 +4,7 @@
 Overview
 ========
 This script:
- - calculates the block sum of unw pixels
- - calculates the block sum of coherence
- - calculates the block sum of connected component size
- - calculates the block std of height
- - combine and normalise a proxy [0-1] of suitability of reference window
- - choose amongst the selected windows (above threshold) the nearest to desired reference location
- - discard ifgs with all nan values in the chosen reference window
+calculates the 
 
 ===============
 Input & output files
@@ -163,7 +157,7 @@ if __name__ == "__main__":
     for frameID in os.listdir(args.frame_dir):
         frameID_path = os.path.join(args.frame_dir, frameID)
         stats_file = os.path.join(args.frame_dir, frameID, "TS_GEOCml10GACOS/info/11ifg_stats.txt")
-        ifg_list_file = os.path.join(args.frame_dir, frameID, "final_list.txt")
+        ifg_list_file = os.path.join(args.frame_dir, frameID, args.ifg_list)
         plot_stats(frameID_path, stats_file, ifg_list_file)
 
     finish()
