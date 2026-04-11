@@ -2,7 +2,7 @@
 
 1. **bin/LiCSBAS11_check_unw.py:** Added the -s flag which checks for coresgistration errors that manifest as a strong azimuthal ramp in the unwrapped interferogram. This flat checks the linear fit to pixels extracted from the central column of the frame, and uses hard-coded R^2 and slope as threshold to weed out such problematic interferograms. 
    
-   ![alt text](tutorial/11_slope.png)
+   ![alt text](tutorial/licsbas11_s.png)
    
 
 2. **bin/LiCSBAS120_choose_reference.py:** A script that automatically select a reference window based on coherence, pixel coverage, connected components and terrain ruggedness. 
